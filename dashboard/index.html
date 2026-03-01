@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPI Dashboard — Real-Time Packet Analysis</title>
+    <meta name="description"
+        content="Deep Packet Inspection dashboard: analyze PCAP files with real-time traffic classification, app detection, and blocking rules.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- ═══ Header ═══ -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-icon">🛡️</div>
+                <div>
+                    <h1><span class="gradient-text">DPI Dashboard</span></h1>
+                    <p class="subtitle">Deep Packet Inspection &middot; Real-Time Analysis</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="speed-control" id="speedControl" style="display:none;">
+                    <label for="speedSlider">Speed</label>
+                    <input type="range" id="speedSlider" min="1" max="500" value="100">
+                    <span id="speedLabel">100 pkt/s</span>
+                </div>
+                <span class="processing-indicator" id="processingIndicator" style="display:none;">
+                    <span class="dot"></span> Processing…
+                </span>
+                <button class="btn" id="resetBtn" style="display:none;">🔄 Reset</button>
+            </div>
+        </header>
+
+        <!-- ═══ Error Banner ═══ -->
+        <div class="error-banner" id="errorBanner">
+            <span class="icon">⚠️</span>
+            <span class="message" id="errorMessage"></span>
+            <button class="close-btn" id="errorClose">&times;</button>
+        </div>
+
+        <!-- ═══ Drop Zone ═══ -->
+        <div class="drop-zone" id="dropZone">
+            <span class="icon">📂</span>
+            <h2>Drop a PCAP file here</h2>
+            <p>or click to browse &middot; supports <strong>.pcap</strong> format (not .pcapng)</p>
+            <input type="file" id="fileInput" accept=".pcap,.cap">
+        </div>
+        <div style="text-align:center; margin-top:-18px; margin-bottom:24px;">
+            <button class="btn btn-primary" id="loadDemoBtn">🧪 Load Demo (test_dpi.pcap)</button>
+        </div>
+
+        <!-- ═══ Progress Bar ═══ -->
+        <div class="progress-bar" id="progressBar">
+            <div class="fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <!-- ═══ Dashboard Content (hidden until file loaded) ═══ -->
+        <div class="dashboard-content" id="dashboardContent">
+
+            <!-- Stats Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card" style="--card-accent: var(--accent);">
+                    <div class="label">Total Packets</div>
+                    <div class="value" id="statTotal">0</div>
+                    <div class="sub" id="statTotalBytes">0 B</div>
+                </div>
+                <div class="stat-card" style="--card-accent: var(--success);">
+                    <div class="label">Forwarded</div>
+                    <div class="value" id="statForwarded">0</div>
+                    <div class="sub" id="statForwardedPct">0%</div>
+                </div>
+                <div class="stat-card" style="--card-accent: var(--danger);">
+                    <div class="label">Blocked</div>
+                    <div class="value" id="statBlocked">0</div>
+                    <div class="sub" id="statBlockedPct">0%</div>
+                </div>
+                <div class="stat-card" style="--card-accent: #a78bfa;">
+                    <div class="label">Connections</div>
+                    <div class="value" id="statConnections">0</div>
+                    <div class="sub" id="statActiveConns">0 active</div>
+                </div>
+                <div class="stat-card" style="--card-accent: #f472b6;">
+                    <div class="label">TCP / UDP</div>
+                    <div class="value" id="statProtocol">0 / 0</div>
+                    <div class="sub">packets</div>
+                </div>
+                <div class="stat-card" style="--card-accent: var(--warning);">
+                    <div class="label">Apps Detected</div>
+                    <div class="value" id="statAppsDetected">0</div>
+                    <div class="sub" id="statSNICount">0 SNIs extracted</div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="dashboard-grid">
+                <!-- App Distribution -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">📊</span> Application Distribution</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="appChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Domains -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">🌐</span> Top Domains</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="domainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="dashboard-grid">
+                <!-- Traffic Timeline -->
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">📈</span> Traffic Timeline</span>
+                    </div>
+                    <div class="chart-container small">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blocking Rules -->
+            <div class="dashboard-grid rules-section">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">🛡️</span> Blocking Rules</span>
+                    </div>
+                    <div class="rule-input-group">
+                        <select id="ruleType">
+                            <option value="app">Block App</option>
+                            <option value="ip">Block IP</option>
+                            <option value="domain">Block Domain</option>
+                        </select>
+                        <input type="text" id="ruleValue" placeholder="e.g. YouTube, 192.168.1.50, tiktok.com">
+                        <button class="btn btn-primary" id="addRuleBtn">➕ Add Rule</button>
+                    </div>
+                    <div id="activeRules"></div>
+                </div>
+            </div>
+
+            <!-- Connection Table -->
+            <div class="dashboard-grid">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">🔗</span> Connections</span>
+                        <span class="badge" id="connCount" style="color: var(--text-3);">0 flows</span>
+                    </div>
+                    <div class="data-table-wrap">
+                        <table class="data-table" id="connectionTable">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Destination</th>
+                                    <th>Proto</th>
+                                    <th>App</th>
+                                    <th>SNI / Domain</th>
+                                    <th>Packets</th>
+                                    <th>Bytes</th>
+                                    <th>State</th>
+                                </tr>
+                            </thead>
+                            <tbody id="connectionBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Packet Feed -->
+            <div class="dashboard-grid">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"><span class="icon">📡</span> Live Packet Feed</span>
+                        <span class="badge" id="packetFeedCount" style="color: var(--text-3);">0 packets</span>
+                    </div>
+                    <div class="data-table-wrap" id="packetFeedWrap" style="max-height: 350px;">
+                        <table class="data-table" id="packetFeedTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Time</th>
+                                    <th>Source</th>
+                                    <th>Destination</th>
+                                    <th>Proto</th>
+                                    <th>Size</th>
+                                    <th>App</th>
+                                    <th>Info</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packetFeedBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /dashboard-content -->
+
+    </div><!-- /app-container -->
+
+    <!-- Dashboard Controller -->
+    <script type="module" src="dashboard.js"></script>
+
+</body>
+
+</html>
