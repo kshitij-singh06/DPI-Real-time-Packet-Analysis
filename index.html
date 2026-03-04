@@ -105,12 +105,49 @@
                 </div>
             </div>
 
+            <!-- Live Packet Feed -->
+            <div class="dashboard-grid">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"> Live Packet Feed</span>
+                        <div class="feed-controls">
+                            <select id="protoFilter" class="filter-select" title="Filter by protocol">
+                                <option value="ALL">All Protocols</option>
+                                <option value="TCP">TCP</option>
+                                <option value="UDP">UDP</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <span class="badge" id="packetFeedCount" style="color: var(--text-3);">0 packets</span>
+                        </div>
+                    </div>
+                    <div class="data-table-wrap" id="packetFeedWrap" style="max-height: 350px;">
+                        <table class="data-table" id="packetFeedTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Time</th>
+                                    <th>Source</th>
+                                    <th>Destination</th>
+                                    <th>Proto</th>
+                                    <th>Size</th>
+                                    <th>App</th>
+                                    <th>Info</th>
+                                    <th>Payload</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packetFeedBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Row 1 -->
             <div class="dashboard-grid">
                 <!-- App Distribution -->
                 <div class="panel">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">📊</span> Application Distribution</span>
+                        <span class="panel-title"> Application Distribution</span>
                     </div>
                     <div class="chart-container">
                         <canvas id="appChart"></canvas>
@@ -120,7 +157,7 @@
                 <!-- Top Domains -->
                 <div class="panel">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">🌐</span> Top Domains</span>
+                        <span class="panel-title"> Top Domains</span>
                     </div>
                     <div class="chart-container">
                         <canvas id="domainChart"></canvas>
@@ -133,7 +170,7 @@
                 <!-- Traffic Timeline -->
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">📈</span> Traffic Timeline</span>
+                        <span class="panel-title"> Traffic Timeline</span>
                     </div>
                     <div class="chart-container small">
                         <canvas id="timelineChart"></canvas>
@@ -145,7 +182,7 @@
             <div class="dashboard-grid rules-section">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">🛡️</span> Blocking Rules</span>
+                        <span class="panel-title">Blocking Rules</span>
                     </div>
                     <div class="rule-input-group">
                         <select id="ruleType">
@@ -154,7 +191,7 @@
                             <option value="domain">Block Domain</option>
                         </select>
                         <input type="text" id="ruleValue" placeholder="e.g. YouTube, 192.168.1.50, tiktok.com">
-                        <button class="btn btn-primary" id="addRuleBtn">➕ Add Rule</button>
+                        <button class="btn btn-primary" id="addRuleBtn">Add Rule</button>
                     </div>
                     <div id="activeRules"></div>
                 </div>
@@ -164,7 +201,7 @@
             <div class="dashboard-grid">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">🔗</span> Connections</span>
+                        <span class="panel-title">Connections</span>
                         <span class="badge" id="connCount" style="color: var(--text-3);">0 flows</span>
                     </div>
                     <div class="data-table-wrap">
@@ -187,33 +224,7 @@
                 </div>
             </div>
 
-            <!-- Live Packet Feed -->
-            <div class="dashboard-grid">
-                <div class="panel full-width">
-                    <div class="panel-header">
-                        <span class="panel-title"><span class="icon">📡</span> Live Packet Feed</span>
-                        <span class="badge" id="packetFeedCount" style="color: var(--text-3);">0 packets</span>
-                    </div>
-                    <div class="data-table-wrap" id="packetFeedWrap" style="max-height: 350px;">
-                        <table class="data-table" id="packetFeedTable">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Time</th>
-                                    <th>Source</th>
-                                    <th>Destination</th>
-                                    <th>Proto</th>
-                                    <th>Size</th>
-                                    <th>App</th>
-                                    <th>Info</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="packetFeedBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+
 
         </div><!-- /dashboard-content -->
 

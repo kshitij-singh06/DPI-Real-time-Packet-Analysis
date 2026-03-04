@@ -267,6 +267,17 @@ export class DPIEngine {
     // ── Packet Log ───────────────────────────────────────────────────────────
 
     _logPacket(pkt, action, flow = null) {
+        // Extract payload preview (up to 128 bytes)
+        let payloadHex = '';
+        let payloadAscii = '';
+        if (pkt.rawData && pkt.payloadOffset != null && pkt.payloadLength > 0) {
+            const maxBytes = Math.min(pkt.payloadLength, 128);
+            const start = pkt.payloadOffset;
+            const slice = pkt.rawData.subarray(start, start + maxBytes);
+            payloadHex = Array.from(slice).map(b => b.toString(16).padStart(2, '0')).join(' ');
+            payloadAscii = Array.from(slice).map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
+        }
+
         const entry = {
             id: pkt.id,
             time: pkt.tsSec ? new Date(pkt.tsSec * 1000).toISOString().slice(11, 23) : '—',
@@ -280,6 +291,8 @@ export class DPIEngine {
             app: flow?.appType || 'Unknown',
             sni: flow?.sni || pkt.dpi?.sni || pkt.dpi?.host || pkt.dpi?.dnsQuery || '',
             action,
+            payloadHex,
+            payloadAscii,
         };
         this.packetLog.push(entry);
         return entry;

@@ -58,6 +58,7 @@ const ruleType = $('#ruleType');
 const ruleValue = $('#ruleValue');
 const addRuleBtn = $('#addRuleBtn');
 const activeRulesDiv = $('#activeRules');
+const protoFilter = $('#protoFilter');
 
 // ─── File Handling ───────────────────────────────────────────────────────────
 
@@ -364,15 +365,22 @@ function updateConnectionTable() {
 
 function updatePacketFeed() {
     const log = engine.packetLog;
-    const total = log.length;
-    packetFeedCount.textContent = total + ' packets';
+    const filter = protoFilter ? protoFilter.value : 'ALL';
 
-    // Show last 150 packets
-    const slice = log.slice(-150);
+    // Apply protocol filter
+    const filtered = filter === 'ALL'
+        ? log
+        : log.filter(p => p.protocol === filter);
+
+    packetFeedCount.textContent = filtered.length + ' / ' + log.length + ' packets';
+
+    // Show last 150 of filtered packets
+    const slice = filtered.slice(-150);
     packetFeedBody.innerHTML = '';
 
     for (const pkt of slice) {
         const tr = document.createElement('tr');
+        const hasPayload = pkt.payloadAscii && pkt.payloadAscii.length > 0;
         tr.innerHTML = `
             <td>${pkt.id}</td>
             <td>${pkt.time}</td>
@@ -382,6 +390,14 @@ function updatePacketFeed() {
             <td>${pkt.size} B</td>
             <td>${makeAppTag(pkt.app)}</td>
             <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(pkt.sni)}">${esc(pkt.sni) || pkt.flags || '—'}</td>
+            <td>${hasPayload
+                ? `<div class="payload-cell" data-mode="ascii">
+                     <span class="payload-text payload-ascii">${esc(pkt.payloadAscii)}</span>
+                     <span class="payload-text payload-hex" style="display:none;">${pkt.payloadHex}</span>
+                     <button class="payload-toggle btn-sm" title="Toggle Hex/ASCII">⟨HEX⟩</button>
+                   </div>`
+                : '<span style="color:var(--text-3);">—</span>'
+            }</td>
             <td>${pkt.action === 'BLOCKED'
                 ? '<span class="badge badge-blocked">BLOCKED</span>'
                 : '<span class="badge badge-forward">FORWARD</span>'
@@ -390,8 +406,37 @@ function updatePacketFeed() {
         packetFeedBody.appendChild(tr);
     }
 
+    // Attach click handlers for payload toggle buttons
+    packetFeedBody.querySelectorAll('.payload-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cell = btn.closest('.payload-cell');
+            const ascii = cell.querySelector('.payload-ascii');
+            const hex = cell.querySelector('.payload-hex');
+            const isAscii = cell.dataset.mode === 'ascii';
+
+            if (isAscii) {
+                ascii.style.display = 'none';
+                hex.style.display = 'inline';
+                cell.dataset.mode = 'hex';
+                btn.textContent = '⟨ASCII⟩';
+            } else {
+                hex.style.display = 'none';
+                ascii.style.display = 'inline';
+                cell.dataset.mode = 'ascii';
+                btn.textContent = '⟨HEX⟩';
+            }
+        });
+    });
+
     // Auto-scroll to bottom
     packetFeedWrap.scrollTop = packetFeedWrap.scrollHeight;
+}
+
+// ─── Protocol Filter ─────────────────────────────────────────────────────────
+
+if (protoFilter) {
+    protoFilter.addEventListener('change', () => updatePacketFeed());
 }
 
 // ─── Blocking Rules UI ───────────────────────────────────────────────────────
