@@ -274,37 +274,49 @@ function initCharts() {
         }
     });
 
-    // Traffic Timeline (Line)
-    charts.timeline = new Chart($('#timelineChart'), {
-        type: 'line',
+    // Blocked vs Forwarded (Stacked Horizontal Bar)
+    charts.blocked = new Chart($('#blockedChart'), {
+        type: 'bar',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Packets / sec',
-                data: [],
-                borderColor: 'rgba(56,189,248,0.8)',
-                backgroundColor: 'rgba(56,189,248,0.08)',
-                fill: true,
-                tension: 0.35,
-                pointRadius: 0,
-                borderWidth: 2,
-            }]
+            datasets: [
+                {
+                    label: 'Forwarded',
+                    data: [],
+                    backgroundColor: 'rgba(34,197,94,0.6)',
+                    borderColor: 'rgba(34,197,94,0.9)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Blocked',
+                    data: [],
+                    backgroundColor: 'rgba(239,68,68,0.6)',
+                    borderColor: 'rgba(239,68,68,0.9)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            indexAxis: 'y',
+            plugins: {
+                legend: { labels: { padding: 14, font: { size: 11 } } },
+            },
             scales: {
                 x: {
+                    stacked: true,
                     grid: { color: 'rgba(148,163,184,0.06)' },
-                    ticks: { maxTicksLimit: 15, font: { size: 10 } }
+                    ticks: { font: { size: 10 } },
                 },
                 y: {
-                    grid: { color: 'rgba(148,163,184,0.06)' },
-                    beginAtZero: true,
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } },
                 }
-            },
-            interaction: { intersect: false, mode: 'index' },
+            }
         }
     });
 }
@@ -312,11 +324,15 @@ function initCharts() {
 // ─── Chart Updates ───────────────────────────────────────────────────────────
 
 function updateCharts() {
-    // App Distribution
+    // App Distribution — gray out blocked apps
     const topApps = engine.getTopApps();
+    const blockedApps = new Set(engine.getRules().apps.map(a => a.toLowerCase()));
     charts.app.data.labels = topApps.map(([a]) => a);
     charts.app.data.datasets[0].data = topApps.map(([, c]) => c);
-    charts.app.data.datasets[0].backgroundColor = topApps.map(([a]) => APP_COLORS[a] || '#475569');
+    charts.app.data.datasets[0].backgroundColor = topApps.map(([a]) => {
+        if (blockedApps.has(a.toLowerCase())) return 'rgba(100,116,139,0.3)';
+        return APP_COLORS[a] || '#475569';
+    });
     charts.app.update('none');
 
     // Top Domains
@@ -325,27 +341,137 @@ function updateCharts() {
     charts.domain.data.datasets[0].data = topDomains.map(([, c]) => c);
     charts.domain.update('none');
 
-    // Timeline
-    const timeline = engine.getTimeline();
-    if (timeline.length > 0) {
-        const baseTime = timeline[0][0];
-        charts.timeline.data.labels = timeline.map(([t]) => {
-            const diff = t - baseTime;
-            return diff + 's';
-        });
-        charts.timeline.data.datasets[0].data = timeline.map(([, c]) => c);
-        charts.timeline.update('none');
+    // Blocked vs Forwarded per app
+    const flows = engine.getFlows();
+    const appStats = {};
+    for (const f of flows) {
+        const app = f.appType || 'Unknown';
+        if (!appStats[app]) appStats[app] = { forwarded: 0, blocked: 0 };
+        if (f.state === 'BLOCKED') {
+            appStats[app].blocked += f.packets;
+        } else {
+            appStats[app].forwarded += f.packets;
+        }
     }
+    const sortedApps = Object.entries(appStats).sort((a, b) =>
+        (b[1].forwarded + b[1].blocked) - (a[1].forwarded + a[1].blocked)
+    ).slice(0, 10);
+
+    charts.blocked.data.labels = sortedApps.map(([a]) => a);
+    charts.blocked.data.datasets[0].data = sortedApps.map(([, s]) => s.forwarded);
+    charts.blocked.data.datasets[1].data = sortedApps.map(([, s]) => s.blocked);
+    charts.blocked.update('none');
 }
 
-// ─── Connection Table ────────────────────────────────────────────────────────
+// ─── Connection Flow Map ─────────────────────────────────────────────────────
+
+const connGroupedView = $('#connGroupedView');
+const connFlatView = $('#connFlatView');
+const connViewToggle = $('#connViewToggle');
+let connViewMode = 'grouped'; // 'grouped' or 'flat'
+
+if (connViewToggle) {
+    connViewToggle.addEventListener('click', () => {
+        connViewMode = connViewMode === 'grouped' ? 'flat' : 'grouped';
+        connViewToggle.textContent = connViewMode === 'grouped' ? '📊 Grouped' : '📋 Flat';
+        connGroupedView.style.display = connViewMode === 'grouped' ? '' : 'none';
+        connFlatView.style.display = connViewMode === 'flat' ? '' : 'none';
+        updateConnectionTable();
+    });
+}
 
 function updateConnectionTable() {
     const flows = engine.getFlows();
     connCount.textContent = flows.length + ' flows';
 
+    const maxBytes = flows.reduce((m, f) => Math.max(m, f.bytes), 1);
+
+    if (connViewMode === 'grouped') {
+        renderGroupedView(flows, maxBytes);
+    } else {
+        renderFlatView(flows, maxBytes);
+    }
+}
+
+function renderGroupedView(flows, maxBytes) {
+    // Group flows by app
+    const groups = {};
+    for (const flow of flows) {
+        const app = flow.appType || 'Unknown';
+        if (!groups[app]) groups[app] = { flows: [], totalBytes: 0, totalPackets: 0 };
+        groups[app].flows.push(flow);
+        groups[app].totalBytes += flow.bytes;
+        groups[app].totalPackets += flow.packets;
+    }
+
+    // Sort groups by total bytes descending
+    const sorted = Object.entries(groups).sort((a, b) => b[1].totalBytes - a[1].totalBytes);
+    const groupMaxBytes = sorted.reduce((m, [, g]) => Math.max(m, g.totalBytes), 1);
+
+    let html = '';
+    for (const [app, group] of sorted) {
+        const color = APP_COLORS[app] || '#475569';
+        const pct = ((group.totalBytes / groupMaxBytes) * 100).toFixed(1);
+        const blocked = group.flows.some(f => f.state === 'BLOCKED');
+
+        html += `
+        <div class="flow-group ${blocked ? 'flow-blocked' : ''}">
+            <div class="flow-group-header" onclick="this.parentElement.classList.toggle('expanded')">
+                <div class="flow-group-left">
+                    ${makeAppTag(app)}
+                    <span class="flow-group-count">${group.flows.length} flow${group.flows.length > 1 ? 's' : ''}</span>
+                </div>
+                <div class="flow-group-right">
+                    <span class="flow-group-packets">${group.totalPackets} pkts</span>
+                    <span class="flow-group-bytes">${formatBytes(group.totalBytes)}</span>
+                    <div class="flow-byte-bar-wrap group-bar">
+                        <div class="flow-byte-bar" style="width:${pct}%;background:${color};"></div>
+                    </div>
+                    <span class="flow-group-chevron">▸</span>
+                </div>
+            </div>
+            <div class="flow-group-body">
+                ${group.flows.map(f => renderFlowCard(f, maxBytes)).join('')}
+            </div>
+        </div>`;
+    }
+
+    connGroupedView.innerHTML = html || '<div class="empty-state"><span class="icon">🔌</span>No connections yet</div>';
+}
+
+function renderFlowCard(flow, maxBytes) {
+    const color = APP_COLORS[flow.appType] || '#475569';
+    const pct = ((flow.bytes / maxBytes) * 100).toFixed(1);
+
+    return `
+    <div class="flow-card ${flow.state === 'BLOCKED' ? 'flow-card-blocked' : ''}">
+        <div class="flow-card-endpoints">
+            <span class="flow-ep src">${flow.srcIP}<span class="flow-port">:${flow.srcPort ?? ''}</span></span>
+            <span class="flow-arrow" style="color:${color}">
+                <svg width="48" height="16" viewBox="0 0 48 16">
+                    <line x1="0" y1="8" x2="40" y2="8" stroke="${color}" stroke-width="2" ${flow.state === 'BLOCKED' ? 'stroke-dasharray="4,3"' : ''}/>
+                    <polygon points="40,2 48,8 40,14" fill="${color}"/>
+                </svg>
+            </span>
+            <span class="flow-ep dst">${flow.dstIP}<span class="flow-port">:${flow.dstPort ?? ''}</span></span>
+        </div>
+        <div class="flow-card-meta">
+            <span class="flow-proto">${flow.protocol}</span>
+            <span class="flow-sni" title="${esc(flow.sni)}">${esc(flow.sni) || '—'}</span>
+            <span class="flow-stats">${flow.packets} pkts · ${formatBytes(flow.bytes)}</span>
+            ${makeStateBadge(flow.state)}
+        </div>
+        <div class="flow-byte-bar-wrap">
+            <div class="flow-byte-bar" style="width:${pct}%;background:${color};"></div>
+        </div>
+    </div>`;
+}
+
+function renderFlatView(flows, maxBytes) {
     connectionBody.innerHTML = '';
-    for (const flow of flows.slice(0, 200)) { // cap at 200 rows
+    for (const flow of flows.slice(0, 200)) {
+        const color = APP_COLORS[flow.appType] || '#475569';
+        const pct = ((flow.bytes / maxBytes) * 100).toFixed(1);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${flow.srcIP}:${flow.srcPort ?? ''}</td>
@@ -355,6 +481,7 @@ function updateConnectionTable() {
             <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(flow.sni)}">${esc(flow.sni) || '—'}</td>
             <td>${flow.packets}</td>
             <td>${formatBytes(flow.bytes)}</td>
+            <td><div class="flow-byte-bar-wrap inline"><div class="flow-byte-bar" style="width:${pct}%;background:${color};"></div></div></td>
             <td>${makeStateBadge(flow.state)}</td>
         `;
         connectionBody.appendChild(tr);
@@ -449,6 +576,9 @@ function addRule() {
     const value = ruleValue.value.trim();
     if (!value) return;
 
+    // Capture old stats before applying rule
+    const oldBlocked = engine.stats.droppedPackets;
+
     switch (type) {
         case 'ip': engine.blockIP(value); break;
         case 'app': engine.blockApp(value); break;
@@ -460,6 +590,43 @@ function addRule() {
 
     // Re-process all packets with new rules
     reprocessAll();
+
+    // Visual feedback
+    const newBlocked = engine.stats.droppedPackets;
+    const diff = newBlocked - oldBlocked;
+
+    // Flash the blocked stat card
+    const blockedCard = statBlocked.closest('.stat-card');
+    blockedCard.classList.add('pulse-danger');
+    setTimeout(() => blockedCard.classList.remove('pulse-danger'), 1200);
+
+    // Toast notification
+    const label = type === 'ip' ? 'IP' : type === 'app' ? 'App' : 'Domain';
+    if (diff > 0) {
+        showToast(`🚫 ${label}: ${value} — ${diff} packet${diff > 1 ? 's' : ''} blocked`, 'danger');
+    } else {
+        showToast(`⚠️ ${label}: ${value} — no matching packets found`, 'warning');
+    }
+}
+
+// ─── Toast Notification System ───────────────────────────────────────────────
+
+const toastContainer = $('#toastContainer');
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = message;
+    toastContainer.appendChild(toast);
+
+    // Trigger enter animation
+    requestAnimationFrame(() => toast.classList.add('visible'));
+
+    // Auto remove after 3.5s
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, 3500);
 }
 
 function removeRule(type, value) {
@@ -632,3 +799,22 @@ if (loadDemoBtn) {
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 renderRules();
+
+// ─── Scroll Animations ───────────────────────────────────────────────────────
+const observerOptions = {
+    threshold: 0.15,
+    rootMargin: "0px 0px -50px 0px"
+};
+
+const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            fadeObserver.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+document.querySelectorAll('.fade-in-scroll').forEach(el => {
+    fadeObserver.observe(el);
+});

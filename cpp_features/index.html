@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetScope — C++ Engine Features</title>
+    <meta name="description" content="Full documentation of the NetScope C++ DPI Engine capabilities — multi-threaded inspection, firewall mode, QUIC parsing, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Page-specific styles */
+        .cpp-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        .cpp-page h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .cpp-page .page-sub {
+            color: var(--text-2);
+            font-size: 0.95rem;
+            margin-bottom: 40px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent);
+            font-size: 0.82rem;
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: var(--text-0); }
+
+        /* Firewall Banner */
+        .firewall-banner {
+            background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(245,158,11,0.06));
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-md);
+            padding: 28px 32px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .firewall-banner::before {
+            content: '🛡️';
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 4rem;
+            opacity: 0.12;
+        }
+
+        .firewall-banner h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-0);
+            margin-bottom: 8px;
+        }
+
+        .firewall-banner .fire-tag {
+            display: inline-block;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .firewall-banner p {
+            color: var(--text-2);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            max-width: 700px;
+        }
+
+        .firewall-banner .fw-use-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .fw-use-case {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            font-size: 0.78rem;
+        }
+
+        .fw-use-case strong {
+            color: var(--text-0);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .fw-use-case span {
+            color: var(--text-3);
+        }
+
+        /* Feature cards */
+        .feature-section {
+            margin-bottom: 32px;
+        }
+
+        .feature-section h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-0);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-sm);
+            padding: 18px 20px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-0);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-card h3 .feat-icon {
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-2);
+            font-size: 0.78rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .feature-card .not-in-web {
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        /* CLI ref */
+        .cli-ref {
+            margin-top: 40px;
+        }
+
+        .cli-ref h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .cli-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .cli-table th {
+            text-align: left;
+            color: var(--text-3);
+            font-weight: 600;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .cli-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(148,163,184,0.06);
+            color: var(--text-1);
+        }
+
+        .cli-table code {
+            background: rgba(56,189,248,0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .cli-table tr:hover td {
+            background: rgba(15, 23, 42, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cpp-page">
+        <a href="../" class="back-link">← Back to NetScope</a>
+
+        <h1>C++ Engine Features</h1>
+        <p class="page-sub">Everything the multi-threaded DPI engine can do — and how to use it.</p>
+
+        <!-- ── Firewall Banner ── -->
+        <div class="firewall-banner">
+            <h2>🛡️ Firewall Mode <span class="fire-tag">PRODUCTION-READY</span></h2>
+            <p>The C++ engine can function as a <strong>Layer 7 application firewall</strong>. Unlike traditional
+                firewalls that only filter by IP/port, the DPI engine inspects packet payloads to identify
+                <em>which application</em> generated the traffic — then blocks or forwards accordingly.</p>
+            <p style="margin-top:8px;">It physically <strong>drops packets</strong> that match blocking rules
+                and writes only forwarded traffic to the output PCAP. With raw socket integration,
+                it can sit <strong>inline on a network path</strong> and filter traffic in real time.</p>
+
+            <div class="fw-use-cases">
+                <div class="fw-use-case">
+                    <strong>🏢 Enterprise Filtering</strong>
+                    <span>Block YouTube, TikTok, Netflix on a corporate network by app name alone</span>
+                </div>
+                <div class="fw-use-case">
+                    <strong>🔒 Parental Controls</strong>
+                    <span>Block specific domains with wildcard matching — <code>*.tiktok.com</code></span>
+                </div>
+                <div class="fw-use-case">
+                    <strong>📊 Traffic Shaping</strong>
+                    <span>Identify bandwidth-heavy apps and selectively drop or throttle</span>
+                </div>
+                <div class="fw-use-case">
+                    <strong>🕵️ Threat Detection</strong>
+                    <span>Detect and drop connections to known malicious IPs or domains</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 18px;">
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">bash — firewall mode</span>
+                    </div>
+                    <pre class="code-block"><span style="color:#6b7280;"># Block YouTube + Facebook + a suspicious IP in one command</span>
+./dpi_engine live_capture.pcap filtered.pcap \
+    --block-app YouTube \
+    --block-app Facebook \
+    --block-domain tiktok.com \
+    --block-ip 10.0.0.99
+
+<span style="color:#22c55e;"># Result: only "clean" traffic makes it to filtered.pcap</span></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Multi-Threading ── -->
+        <div class="feature-section">
+            <h2>⚡ Multi-Threaded Pipeline</h2>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🧵</span> Thread Architecture
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>The engine runs a multi-stage pipeline: <strong>PCAP Reader → Load Balancers → Fast Path Workers → Output Writer</strong>,
+                    each as a separate thread. This means packet reading, inspection, and output writing all happen concurrently.</p>
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">bash — configure threads</span>
+                    </div>
+                    <pre class="code-block"><span style="color:#6b7280;"># Default: 2 LBs × 2 FPs each = 4 worker threads</span>
+./dpi_engine input.pcap output.pcap
+
+<span style="color:#6b7280;"># Scale up: 4 LBs × 4 FPs = 16 worker threads</span>
+./dpi_engine input.pcap output.pcap --lbs 4 --fps 4</pre>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🔗</span> Consistent Hashing Load Balancing
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Load balancers use <strong>FiveTupleHash</strong> (src IP, dst IP, src port, dst port, protocol) to route
+                    all packets from the same connection to the <em>same</em> Fast Path worker. This guarantees
+                    flow affinity without any shared state between workers.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🔒</span> Thread-Safe Queues with Backpressure
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Each inter-thread queue (<code>TSQueue&lt;T&gt;</code>) uses mutex + condition variables with a
+                    configurable max size (default: 10,000). When a queue is full, the producer blocks until space
+                    is available — preventing memory blowup under heavy load.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">📊</span> Atomic Statistics
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>All counters (total packets, forwarded, dropped, TCP/UDP counts) use <code>std::atomic&lt;uint64_t&gt;</code>
+                    for lock-free thread-safe updates. Per-app stats use a separate mutex-protected map.</p>
+            </div>
+        </div>
+
+        <!-- ── Deep Packet Inspection ── -->
+        <div class="feature-section">
+            <h2>🔍 Deep Packet Inspection</h2>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🔐</span> TLS SNI Extraction</h3>
+                <p>Parses TLS ClientHello messages to extract the <strong>Server Name Indication (SNI)</strong> field — the
+                    plaintext hostname sent before encryption starts. This is how the engine identifies HTTPS traffic
+                    without decryption. Works on port 443.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🌐</span> QUIC SNI Extraction
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>QUIC (HTTP/3) uses UDP:443 instead of TCP. The engine parses <strong>QUIC Initial packets</strong>
+                    which contain the TLS ClientHello inside CRYPTO frames, extracting SNI in the same way.
+                    This catches traffic from Chrome, YouTube, and Google services that default to QUIC.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">📄</span> HTTP Host Header Extraction
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>For unencrypted HTTP (port 80), the engine reads the <code>Host:</code> header from the HTTP request
+                    to identify the destination website. Combined with SNI extraction, this covers both HTTP and HTTPS traffic.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🗃️</span> DNS Query Extraction
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Extracts queried domain names from DNS request packets (port 53). This provides an additional
+                    classification signal — even before the actual connection is established, the engine knows
+                    what domain the client is trying to reach.</p>
+            </div>
+        </div>
+
+        <!-- ── Blocking & Filtering ── -->
+        <div class="feature-section">
+            <h2>🚫 Blocking & Filtering Rules</h2>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🌍</span> IP Blocking</h3>
+                <p>Block all traffic from a specific source IP address. The IP is parsed into a <code>uint32_t</code>
+                    and checked in an <code>unordered_set</code> for O(1) lookup speed.</p>
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">bash</span>
+                    </div>
+                    <pre class="code-block">./dpi_engine input.pcap output.pcap --block-ip 192.168.1.50 --block-ip 10.0.0.5</pre>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">📱</span> Application Blocking</h3>
+                <p>Block entire applications by name. The engine first classifies the traffic using SNI/Host/DNS,
+                    then applies the blocking rule. Supported apps include: YouTube, Facebook, Netflix, Google, GitHub,
+                    TikTok, Twitter, Instagram, LinkedIn, Spotify, and more.</p>
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">bash</span>
+                    </div>
+                    <pre class="code-block">./dpi_engine input.pcap output.pcap --block-app YouTube --block-app Netflix</pre>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🔗</span> Domain Blocking with Wildcards
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Block domains with <strong>substring matching</strong> and wildcard support.
+                    <code>*.facebook.com</code> blocks all Facebook subdomains including
+                    <code>m.facebook.com</code>, <code>static.facebook.com</code>, etc.</p>
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">bash</span>
+                    </div>
+                    <pre class="code-block">./dpi_engine input.pcap output.pcap --block-domain facebook.com --block-domain tiktok</pre>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🚪</span> Port Blocking
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Block all traffic to specific destination ports. For example, block port 8080 to prevent proxy access,
+                    or block port 22 to prevent SSH tunneling.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">📋</span> Block Reason Reporting
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>When a packet is blocked, the engine records exactly <em>why</em> — was it an IP rule, an app rule,
+                    a domain rule, or a port rule? The <code>BlockReason</code> struct contains the type and a human-readable
+                    detail string.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">💾</span> Rule Persistence
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Save your blocking rules to a file with <code>saveRules()</code> and reload them later with
+                    <code>loadRules()</code>. Deploy the same ruleset across multiple instances or environments.</p>
+            </div>
+        </div>
+
+        <!-- ── Connection Tracking ── -->
+        <div class="feature-section">
+            <h2>🔌 Connection Tracking</h2>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🗂️</span> Per-Thread Flow Tables
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Each Fast Path worker maintains its own <code>unordered_map&lt;FiveTuple, FlowEntry&gt;</code>.
+                    Because flow affinity guarantees all packets from the same connection go to the same worker,
+                    these tables are <strong>thread-local</strong> — no locks needed for flow lookup or update.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">🔄</span> TCP State Machine
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>The engine tracks TCP connection state transitions: <strong>NEW → SYN_SENT → ESTABLISHED → FIN_WAIT → CLOSED</strong>.
+                    This enables accurate connection counting and detection of incomplete handshakes (potential port scans).</p>
+            </div>
+        </div>
+
+        <!-- ── I/O ── -->
+        <div class="feature-section">
+            <h2>📁 File I/O</h2>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">📖</span> Streaming PCAP Reader
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>The <code>PcapReader</code> reads packets one at a time from disk — never loading the entire file
+                    into memory. This means you can process <strong>multi-gigabyte capture files</strong> with constant
+                    memory usage.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3><span class="feat-icon">✏️</span> Output PCAP Writer
+                    <span class="not-in-web">NOT IN WEB VERSION</span></h3>
+                <p>Forwarded packets are written to a new PCAP file in real time. The output file contains only the
+                    "clean" traffic — blocked packets are physically absent. You can then open this file in
+                    Wireshark or feed it into another tool.</p>
+            </div>
+        </div>
+
+        <!-- ── CLI Reference ── -->
+        <div class="cli-ref">
+            <h2>📟 CLI Reference</h2>
+            <table class="cli-table">
+                <thead>
+                    <tr>
+                        <th>Flag</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>--block-ip &lt;ip&gt;</code></td>
+                        <td>Block source IP (can be repeated)</td>
+                        <td><code>--block-ip 192.168.1.50</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>--block-app &lt;app&gt;</code></td>
+                        <td>Block application by name</td>
+                        <td><code>--block-app YouTube</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>--block-domain &lt;dom&gt;</code></td>
+                        <td>Block domain (substring match)</td>
+                        <td><code>--block-domain tiktok.com</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>--lbs &lt;n&gt;</code></td>
+                        <td>Number of Load Balancer threads (default: 2)</td>
+                        <td><code>--lbs 4</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>--fps &lt;n&gt;</code></td>
+                        <td>Fast Path threads per LB (default: 2)</td>
+                        <td><code>--fps 4</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--surface-border);text-align:center;">
+            <a href="../" class="back-link">← Back to NetScope Dashboard</a>
+        </div>
+    </div>
+</body>
+
+</html>

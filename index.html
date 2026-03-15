@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPI Dashboard — Real-Time Packet Analysis</title>
+    <title>NetScope — Deep Packet Inspection Engine</title>
     <meta name="description"
-        content="Deep Packet Inspection dashboard: analyze PCAP files with real-time traffic classification, app detection, and blocking rules.">
+        content="A multi-threaded C++17 DPI engine with a real-time browser dashboard. Analyze PCAP files with traffic classification, app detection, and blocking rules.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -23,50 +23,402 @@
 <body>
     <div class="app-container">
 
-        <!-- ═══ Header ═══ -->
-        <header class="header">
-            <div class="header-left">
-                <div class="logo-icon">🛡️</div>
-                <div>
-                    <h1><span class="gradient-text">DPI Dashboard</span></h1>
-                    <p class="subtitle">Deep Packet Inspection &middot; Real-Time Analysis</p>
+        <!-- HERO SECTION -->
+        <section class="hero fade-in-scroll">
+            <div class="hero-content">
+                <div class="hero-badges">
+                    <span class="tech-badge">C++17</span>
+                    <span class="tech-badge">JavaScript</span>
+                    <span class="tech-badge">Chart.js</span>
+                    <span class="tech-badge">Multi-Threaded</span>
+                </div>
+                <h1 class="hero-title"><span class="gradient-text">NetScope</span></h1>
+                <p class="hero-tagline">Deep Packet Inspection Engine & Real-Time Traffic Dashboard</p>
+                <p class="hero-description">
+                    A high-performance network traffic analysis system that inspects packets at the protocol level —
+                    extracting TLS SNI, HTTP hosts, and DNS queries to classify and control application traffic.
+                    Built with a multi-threaded C++17 engine and a zero-dependency browser dashboard.
+                </p>
+                <div class="hero-actions">
+                    <a href="#dashboard-section" class="btn btn-primary btn-lg">▶ Dashboard Demo</a>
+                    <a href="#architecture-section" class="btn btn-lg"> Architecture</a>
+                    <a href="cpp_features/index.html" class="btn btn-lg"> C++ Features</a>
+                    <a href="https://github.com" class="btn btn-lg" target="_blank"> GitHub</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">20+</span>
+                        <span class="hero-stat-label">App Signatures</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">4</span>
+                        <span class="hero-stat-label">Pipeline Stages</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">5</span>
+                        <span class="hero-stat-label">Protocol Parsers</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">0</span>
+                        <span class="hero-stat-label">External Deps</span>
+                    </div>
                 </div>
             </div>
-            <div class="header-right">
-                <div class="speed-control" id="speedControl" style="display:none;">
-                    <label for="speedSlider">Speed</label>
-                    <input type="range" id="speedSlider" min="1" max="500" value="100">
-                    <span id="speedLabel">100 pkt/s</span>
-                </div>
-                <span class="processing-indicator" id="processingIndicator" style="display:none;">
-                    <span class="dot"></span> Processing…
-                </span>
-                <button class="btn" id="resetBtn" style="display:none;">🔄 Reset</button>
+        </section>
+
+        <!-- SYSTEM ARCHITECTURE SECTION -->
+        <section class="architecture-section fade-in-scroll" id="architecture-section">
+            <div class="section-header">
+                <h2><span class="gradient-text">System Architecture</span></h2>
+                <p class="section-subtitle">A multi-threaded packet processing pipeline designed for high-throughput
+                    deep packet inspection</p>
             </div>
-        </header>
 
-        <!-- ═══ Error Banner ═══ -->
-        <div class="error-banner" id="errorBanner">
-            <span class="icon">⚠️</span>
-            <span class="message" id="errorMessage"></span>
-            <button class="close-btn" id="errorClose">&times;</button>
-        </div>
+            <!-- ── Visual Pipeline Diagram ── -->
+            <div class="arch-pipeline">
+                <div class="arch-stage">
+                    <div class="arch-stage-label">PCAP Reader</div>
+                    <div class="arch-stage-threads">1 thread</div>
+                </div>
+                <div class="arch-arrow">
+                    <svg width="40" height="24" viewBox="0 0 40 24">
+                        <path d="M0 12h30M24 4l8 8-8 8" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="arch-stage">
+                    <div class="arch-stage-label">Load Balancers</div>
+                    <div class="arch-stage-threads">N threads</div>
+                </div>
+                <div class="arch-arrow">
+                    <svg width="40" height="24" viewBox="0 0 40 24">
+                        <path d="M0 12h30M24 4l8 8-8 8" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="arch-stage">
+                    <div class="arch-stage-label">Fast-Path Workers</div>
+                    <div class="arch-stage-threads">M threads</div>
+                </div>
+                <div class="arch-arrow">
+                    <svg width="40" height="24" viewBox="0 0 40 24">
+                        <path d="M0 12h30M24 4l8 8-8 8" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="arch-stage">
+                    <div class="arch-stage-label">Output Writer</div>
+                    <div class="arch-stage-threads">1 thread</div>
+                </div>
+            </div>
 
-        <!-- ═══ Drop Zone ═══ -->
-        <div class="drop-zone" id="dropZone">
-            <span class="icon">📂</span>
-            <h2>Drop a PCAP file here</h2>
-            <p>or click to browse &middot; supports <strong>.pcap</strong> format (not .pcapng)</p>
-            <input type="file" id="fileInput" accept=".pcap,.cap">
-        </div>
-        <div style="text-align:center; margin-top:-18px; margin-bottom:24px;">
-            <button class="btn btn-primary" id="loadDemoBtn">🧪 Load Demo (test_dpi.pcap)</button>
-        </div>
+            <!-- ── Stage Explanations ── -->
+            <div class="arch-details-grid">
+                <div class="arch-detail-card">
+                    <div class="arch-detail-num">01</div>
+                    <h3>PCAP Reader</h3>
+                    <p>A single reader thread parses the PCAP global header and sequentially reads packet records from
+                        disk. Each packet's Ethernet, IP, and transport headers are decoded into a structured
+                        <code>PacketJob</code> and pushed into a thread-safe queue for distribution.
+                    </p>
+                    <div class="arch-detail-tag">Single-threaded · Sequential I/O · Zero-copy reads</div>
+                </div>
 
-        <!-- ═══ Progress Bar ═══ -->
-        <div class="progress-bar" id="progressBar">
-            <div class="fill" id="progressFill" style="width: 0%"></div>
-        </div>
+                <div class="arch-detail-card">
+                    <div class="arch-detail-num">02</div>
+                    <h3>Load Balancers</h3>
+                    <p>Load balancer threads pull packets from the reader queue and route them to the correct fast-path
+                        worker using <strong>consistent hashing</strong> on the five-tuple (srcIP, dstIP, srcPort,
+                        dstPort, protocol). This ensures all packets from the same connection always land on the same
+                        worker.</p>
+                    <div class="arch-detail-tag">Consistent hashing · Flow affinity · Lock-free distribution</div>
+                </div>
+
+                <div class="arch-detail-card">
+                    <div class="arch-detail-num">03</div>
+                    <h3>Fast-Path Workers</h3>
+                    <p>Each worker manages its own connection table and independently performs deep packet inspection —
+                        extracting TLS SNI, HTTP Host headers, and DNS queries. It classifies traffic against 20+ app
+                        signatures and applies blocking rules. Since flows are pinned to a single worker, <strong>no
+                            locks are needed</strong> on connection state.</p>
+                    <div class="arch-detail-tag">Per-thread state · DPI extraction · Rule enforcement</div>
+                </div>
+
+                <div class="arch-detail-card">
+                    <div class="arch-detail-num">04</div>
+                    <h3>Output Writer</h3>
+                    <p>The output writer collects processed packets from all workers and writes forwarded packets to an
+                        output PCAP file. Blocked packets are dropped. It also aggregates global statistics — app
+                        distribution, domain rankings, and connection summaries.</p>
+                    <div class="arch-detail-tag">Aggregation · PCAP output · Global statistics</div>
+                </div>
+            </div>
+
+            <!-- ── Design Decisions ── -->
+            <div class="arch-decisions">
+                <h3>Key Design Decisions</h3>
+                <div class="decision-grid">
+                    <div class="decision-card">
+                        <div class="decision-icon">🔗</div>
+                        <h4>Why Consistent Hashing?</h4>
+                        <p>A TCP connection spans many packets (SYN, data, FIN). The engine must see <em>all</em>
+                            packets from a flow to track its state — from the initial handshake through TLS negotiation
+                            to app classification. Consistent hashing on the five-tuple guarantees this without a global
+                            lookup table.</p>
+                    </div>
+                    <div class="decision-card">
+                        <div class="decision-icon"></div>
+                        <h4>Why Flow Affinity?</h4>
+                        <p>Pinning flows to a single worker thread means each worker's connection table is
+                            <strong>thread-local</strong> — no mutexes, no contention, no cache invalidation. This
+                            enables wire-speed processing: each core runs independently on its own slice of traffic.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Engine vs Dashboard Capabilities ── -->
+            <div class="capabilities-section">
+                <h3>Engine vs Dashboard Capabilities</h3>
+                <p class="capabilities-intro">The C++ engine is a <strong>real packet inspection system</strong> that
+                    processes live traffic at wire speed. The browser dashboard is a <strong>visualization and analysis
+                        tool</strong> that replays captured traffic for interactive exploration.</p>
+
+                <div class="showcase-card" style="margin-top: 20px;">
+                    <table class="compare-table capabilities-table">
+                        <thead>
+                            <tr>
+                                <th>Capability</th>
+                                <th>C++ Engine</th>
+                                <th>Browser Dashboard</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Live Network Capture</td>
+                                <td><span class="cap-status yes">✓ Supported</span><span class="cap-note">Hooks into
+                                        network interfaces via raw sockets</span></td>
+                                <td><span class="cap-status no">✗ Not possible</span><span class="cap-note">Browsers
+                                        cannot access network interfaces</span></td>
+                            </tr>
+                            <tr>
+                                <td>Packet Blocking</td>
+                                <td><span class="cap-status yes">✓ Real blocking</span><span class="cap-note">Physically
+                                        drops packets — acts as a firewall</span></td>
+                                <td><span class="cap-status partial">~ Simulated</span><span class="cap-note">Visual
+                                        only — marks as blocked, traffic still flows</span></td>
+                            </tr>
+                            <tr>
+                                <td>Multi-Threading</td>
+                                <td><span class="cap-status yes">✓ Full pipeline</span><span class="cap-note">Reader →
+                                        Load Balancers → Workers → Writer</span></td>
+                                <td><span class="cap-status no">✗ Single-threaded</span><span
+                                        class="cap-note">JavaScript main thread only</span></td>
+                            </tr>
+                            <tr>
+                                <td>Performance</td>
+                                <td><span class="cap-status yes">✓ Millions pkt/s</span><span class="cap-note">Lock-free
+                                        queues, zero-copy, per-core scaling</span></td>
+                                <td><span class="cap-status partial">~ 10K–50K pkt/s</span><span
+                                        class="cap-note">Browser ArrayBuffer parsing</span></td>
+                            </tr>
+                            <tr>
+                                <td>Deployment</td>
+                                <td><span class="cap-status partial">~ Compiled binary</span><span
+                                        class="cap-note">Requires C++17 compiler, Linux/Windows</span></td>
+                                <td><span class="cap-status yes">✓ Zero install</span><span class="cap-note">Open in any
+                                        browser — GitHub Pages ready</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="capabilities-summary">Both implementations share the same core DPI algorithms — <strong>SNI
+                        extraction, flow tracking, app classification, and rule matching</strong> — ported from C++ to
+                    JavaScript for browser accessibility. The C++ engine is designed for production environments, while
+                    the dashboard makes these concepts interactive and demo-ready.</p>
+            </div>
+
+            <!-- ── TLS SNI Extraction ── -->
+            <div class="sni-section">
+                <h3>How TLS SNI Extraction Works</h3>
+                <p class="sni-intro">Even HTTPS leaks the destination domain: the TLS <strong>ClientHello</strong> is
+                    sent <em>before</em> encryption starts, exposing the <strong>Server Name Indication (SNI)</strong>
+                    in plaintext. The engine reads this field to classify traffic — no decryption needed.</p>
+
+                <div class="sni-tree">
+                    <div class="tree-root">TLS Record (0x16 = Handshake)</div>
+                    <div class="tree-branch">
+                        <div class="tree-node">ClientHello (0x01)</div>
+                        <div class="tree-branch">
+                            <div class="tree-leaf">Version: TLS 1.2 / 1.3</div>
+                            <div class="tree-leaf">Random: 32 bytes</div>
+                            <div class="tree-leaf">Cipher Suites: [0x1301, 0x1302, …]</div>
+                            <div class="tree-node">Extensions</div>
+                            <div class="tree-branch">
+                                <div class="tree-leaf">Supported Groups</div>
+                                <div class="tree-leaf">Key Share</div>
+                                <div class="tree-node highlight-leaf">SNI (Type: 0x0000)</div>
+                                <div class="tree-branch">
+                                    <div class="tree-leaf sni-value">server_name: <strong>"www.youtube.com"</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Build & Run ── -->
+            <div class="build-section">
+                <h3>Build & Run the C++ Engine</h3>
+                <p class="build-intro">Compile and run the multi-threaded DPI engine on your own machine:</p>
+
+                <div class="build-grid">
+                    <div class="build-card">
+                        <div class="build-card-label">1. Build</div>
+                        <div class="terminal-window">
+                            <div class="terminal-bar">
+                                <span class="terminal-dot dot-red"></span>
+                                <span class="terminal-dot dot-yellow"></span>
+                                <span class="terminal-dot dot-green"></span>
+                                <span class="terminal-title">bash — build</span>
+                            </div>
+                            <pre class="code-block">g++ -std=c++17 -pthread -O2 -I include -o dpi_engine \
+    src/dpi_mt.cpp \
+    src/pcap_reader.cpp \
+    src/packet_parser.cpp \
+    src/sni_extractor.cpp \
+    src/connection_tracker.cpp \
+    src/load_balancer.cpp \
+    src/fast_path.cpp \
+    src/rule_manager.cpp \
+    src/types.cpp</pre>
+                        </div>
+                    </div>
+
+                    <div class="build-card">
+                        <div class="build-card-label">2. Run</div>
+                        <div class="terminal-window">
+                            <div class="terminal-bar">
+                                <span class="terminal-dot dot-red"></span>
+                                <span class="terminal-dot dot-yellow"></span>
+                                <span class="terminal-dot dot-green"></span>
+                                <span class="terminal-title">bash — run</span>
+                            </div>
+                            <pre class="code-block">./dpi_engine test_dpi.pcap output.pcap \
+    --block-app YouTube \
+    --block-domain facebook.com \
+    --block-ip 10.0.0.5</pre>
+                        </div>
+                        <p class="build-note">This reads <code>test_dpi.pcap</code>, applies 3 blocking rules, and
+                            writes forwarded packets to <code>output.pcap</code>.</p>
+                    </div>
+
+                    <div class="build-card full-span">
+                        <div class="build-card-label">3. Example Output</div>
+                        <div class="terminal-window">
+                            <div class="terminal-bar">
+                                <span class="terminal-dot dot-red"></span>
+                                <span class="terminal-dot dot-yellow"></span>
+                                <span class="terminal-dot dot-green"></span>
+                                <span class="terminal-title">dpi_engine — output</span>
+                            </div>
+                            <pre class="code-block output-block">╔══════════════════════════════════════════════════════════════╗
+║                   DPI Engine — Run Report                    ║
+╠══════════════════════════════════════════════════════════════╣
+║  Input:    test_dpi.pcap (77 packets, 5.6 KB)               ║
+║  Output:   output.pcap                                       ║
+║  Duration: 0.003s                                            ║
+╠══════════════════════════════════════════════════════════════╣
+║  PACKET STATISTICS                                           ║
+║  ├─ Total Packets:    77                                     ║
+║  ├─ Forwarded:        62 (80.5%)                             ║
+║  ├─ Blocked:          15 (19.5%)                             ║
+║  ├─ TCP:              68                                     ║
+║  └─ UDP:               9                                     ║
+╠══════════════════════════════════════════════════════════════╣
+║  APPLICATIONS DETECTED                                       ║
+║  ├─ Google         12 packets    1,240 bytes                 ║
+║  ├─ YouTube         8 packets      892 bytes  ← BLOCKED     ║
+║  ├─ Facebook        7 packets      756 bytes  ← BLOCKED     ║
+║  ├─ GitHub          6 packets      654 bytes                 ║
+║  ├─ Netflix         5 packets      580 bytes                 ║
+║  └─ 4 more apps...                                           ║
+╠══════════════════════════════════════════════════════════════╣
+║  BLOCKING RULES APPLIED                                      ║
+║  ├─ Block App:     YouTube       → 8 packets dropped         ║
+║  ├─ Block Domain:  facebook.com  → 7 packets dropped         ║
+║  └─ Block IP:      10.0.0.5     → 0 packets matched         ║
+╚══════════════════════════════════════════════════════════════╝</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="build-explanation">
+                    <h4>How the Engine Processes Traffic</h4>
+                    <p>When you run the engine, the reader thread opens the PCAP file and pushes decoded packets into
+                        thread-safe queues. Load balancers distribute packets across fast-path workers using
+                        <strong>consistent hashing</strong> on each packet's five-tuple — ensuring all packets from the
+                        same connection reach the same worker. Each worker independently performs DPI (SNI extraction,
+                        HTTP parsing, DNS decoding), classifies the application, checks blocking rules, and either
+                        forwards or drops the packet. The output writer aggregates statistics and writes forwarded
+                        packets to the output file.
+                    </p>
+                </div>
+            </div>
+
+            <div class="showcase-footer" style="margin-top: 32px;">
+                <a href="engine/README.md" class="btn" target="_blank"> C++ Engine Docs</a>
+                <a href="https://github.com" class="btn btn-primary" target="_blank"> View on GitHub</a>
+            </div>
+        </section>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard-section" class="fade-in-scroll">
+            <header class="header">
+                <div class="header-left">
+                                        <div>
+                        <h2><span class="gradient-text">Live Dashboard</span></h2>
+                        <p class="subtitle">Drop a PCAP file to analyze traffic</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="speed-control" id="speedControl" style="display:none;">
+                        <label for="speedSlider">Speed</label>
+                        <input type="range" id="speedSlider" min="1" max="500" value="100">
+                        <span id="speedLabel">100 pkt/s</span>
+                    </div>
+                    <span class="processing-indicator" id="processingIndicator" style="display:none;">
+                        <span class="dot"></span> Processing…
+                    </span>
+                    <button class="btn" id="resetBtn" style="display:none;">🔄 Reset</button>
+                </div>
+            </header>
+
+            <!-- ═══ Error Banner ═══ -->
+            <div class="error-banner" id="errorBanner">
+                <span class="icon">⚠️</span>
+                <span class="message" id="errorMessage"></span>
+                <button class="close-btn" id="errorClose">&times;</button>
+            </div>
+
+            <!-- ═══ Drop Zone ═══ -->
+            <div class="drop-zone" id="dropZone">
+                <span class="icon">📂</span>
+                <h2>Drop a PCAP file here</h2>
+                <p>or click to browse &middot; supports <strong>.pcap</strong> format (not .pcapng)</p>
+                <input type="file" id="fileInput" accept=".pcap,.cap">
+            </div>
+            <div style="text-align:center; margin-top:-18px; margin-bottom:24px;">
+                <button class="btn btn-primary" id="loadDemoBtn">Load Demo (test_dpi.pcap)</button>
+            </div>
+
+            <!-- ═══ Progress Bar ═══ -->
+            <div class="progress-bar" id="progressBar">
+                <div class="fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </section>
 
         <!-- ═══ Dashboard Content (hidden until file loaded) ═══ -->
         <div class="dashboard-content" id="dashboardContent">
@@ -109,7 +461,7 @@
             <div class="dashboard-grid">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"> Live Packet Feed</span>
+                        <span class="panel-title"><span class="icon">📡</span> Live Packet Feed</span>
                         <div class="feed-controls">
                             <select id="protoFilter" class="filter-select" title="Filter by protocol">
                                 <option value="ALL">All Protocols</option>
@@ -163,20 +515,20 @@
                         <canvas id="domainChart"></canvas>
                     </div>
                 </div>
-            </div>
 
-            <!-- Charts Row 2 -->
-            <div class="dashboard-grid">
-                <!-- Traffic Timeline -->
+                <!-- Blocked vs Forwarded -->
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"> Traffic Timeline</span>
+                        <span class="panel-title">🚦 Blocked vs Forwarded</span>
                     </div>
                     <div class="chart-container small">
-                        <canvas id="timelineChart"></canvas>
+                        <canvas id="blockedChart"></canvas>
                     </div>
                 </div>
             </div>
+
+            <!-- Toast Container -->
+            <div id="toastContainer" class="toast-container"></div>
 
             <!-- Blocking Rules -->
             <div class="dashboard-grid rules-section">
@@ -197,14 +549,19 @@
                 </div>
             </div>
 
-            <!-- Connection Table -->
+            <!-- Connection Flow Map -->
             <div class="dashboard-grid">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">Connections</span>
-                        <span class="badge" id="connCount" style="color: var(--text-3);">0 flows</span>
+                        <span class="panel-title">🗺️ Connection Flow Map</span>
+                        <div class="feed-controls">
+                            <button class="btn btn-sm" id="connViewToggle" title="Toggle grouped/flat view">📊
+                                Grouped</button>
+                            <span class="badge" id="connCount" style="color: var(--text-3);">0 flows</span>
+                        </div>
                     </div>
-                    <div class="data-table-wrap">
+                    <div id="connGroupedView"></div>
+                    <div class="data-table-wrap" id="connFlatView" style="display:none;">
                         <table class="data-table" id="connectionTable">
                             <thead>
                                 <tr>
@@ -215,6 +572,7 @@
                                     <th>SNI / Domain</th>
                                     <th>Packets</th>
                                     <th>Bytes</th>
+                                    <th>Flow</th>
                                     <th>State</th>
                                 </tr>
                             </thead>
@@ -223,8 +581,6 @@
                     </div>
                 </div>
             </div>
-
-
 
         </div><!-- /dashboard-content -->
 
