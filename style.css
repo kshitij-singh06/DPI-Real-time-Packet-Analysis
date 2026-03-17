@@ -2091,3 +2091,215 @@ h4 {
     animation: pulseDanger 1.2s ease-out;
     border-color: rgba(239, 68, 68, 0.4) !important;
 }
+
+/* ─── Hex Inspector Modal ─────────────────────────────────────────────────── */
+
+.modal {
+    display: flex; /* Always flex, use visibility/pointer-events to hide */
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+    pointer-events: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(7, 13, 26, 0.85); /* Deep navy base */
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.show {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.hex-modal-content {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 229, 255, 0.1);
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.98);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal.show .hex-modal-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--surface-border);
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+}
+
+.modal-meta {
+    margin-left: 16px;
+    font-size: 0.8rem;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace;
+    flex-grow: 1;
+}
+
+.close-modal {
+    color: var(--text-3);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--text-0);
+}
+
+.hex-inspector-body {
+    display: flex;
+    gap: 16px;
+    padding: 24px;
+    overflow-y: auto;
+    background: var(--bg);
+}
+
+.hex-pane, .ascii-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.pane-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.mono-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-1);
+    background: #0b1120;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-x: auto;
+    white-space: pre;
+    flex-grow: 1;
+    margin: 0;
+}
+
+.hex-pane .mono-text {
+    color: #38bdf8; /* hex bytes in light blue */
+}
+
+.ascii-pane .mono-text {
+    color: #a78bfa; /* ascii in purple */
+}
+
+/* Hovering a row could link them, but simpler for now */
+.payload-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payload-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+}
+
+/* Make rows clickable */
+#packetFeedBody tr {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#packetFeedBody tr:hover {
+    background: rgba(56, 189, 248, 0.05);
+}
+
+/* ─── World Map (Leaflet) ─────────────────────────────────────────────────── */
+
+#worldMap {
+    width: 100%;
+    height: 480px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: #0c111d;
+    z-index: 0;
+}
+
+/* Invert Leaflet tiles to match dark theme */
+.leaflet-tile {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95);
+}
+
+.leaflet-container {
+    background: #0c111d;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom popup */
+.leaflet-popup-content-wrapper {
+    background: var(--surface) !important;
+    border: 1px solid var(--surface-border) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+    color: var(--text-1) !important;
+}
+
+.leaflet-popup-tip {
+    background: var(--surface) !important;
+}
+
+.leaflet-popup-content {
+    margin: 12px 16px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.geo-popup-ip {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 0.88rem;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.geo-popup-info {
+    color: var(--text-2);
+}
+
+.geo-popup-count {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(0, 229, 255, 0.1);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+}

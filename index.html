@@ -18,6 +18,8 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
+    <!-- Leaflet.js CSS for interactive world map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 </head>
 
 <body>
@@ -43,26 +45,10 @@
                     <a href="#dashboard-section" class="btn btn-primary btn-lg">▶ Dashboard Demo</a>
                     <a href="#architecture-section" class="btn btn-lg"> Architecture</a>
                     <a href="cpp_features/index.html" class="btn btn-lg"> C++ Features</a>
-                    <a href="https://github.com" class="btn btn-lg" target="_blank"> GitHub</a>
+                    <a href="cpp_docs.html" class="btn btn-lg"> C++ Docs</a>
+                    <a href="https://kshitij-singh06.github.io/DPI-Real-time-Packet-Analysis/" class="btn btn-lg" target="_blank"> GitHub</a>
                 </div>
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">20+</span>
-                        <span class="hero-stat-label">App Signatures</span>
-                    </div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">4</span>
-                        <span class="hero-stat-label">Pipeline Stages</span>
-                    </div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">5</span>
-                        <span class="hero-stat-label">Protocol Parsers</span>
-                    </div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">0</span>
-                        <span class="hero-stat-label">External Deps</span>
-                    </div>
-                </div>
+                
             </div>
         </section>
 
@@ -196,10 +182,8 @@
                         <tbody>
                             <tr>
                                 <td>Live Network Capture</td>
-                                <td><span class="cap-status yes">✓ Supported</span><span class="cap-note">Hooks into
-                                        network interfaces via raw sockets</span></td>
-                                <td><span class="cap-status no">✗ Not possible</span><span class="cap-note">Browsers
-                                        cannot access network interfaces</span></td>
+                                <td><span class="cap-status yes">✓ Supported</span><span class="cap-note">Hooks into network interfaces to process live traffic</span></td>
+                                <td><span class="cap-status no">✗ Not Supported</span><span class="cap-note">Parses uploaded PCAP files locally using ArrayBuffers</span></td>
                             </tr>
                             <tr>
                                 <td>Packet Blocking</td>
@@ -217,8 +201,7 @@
                             </tr>
                             <tr>
                                 <td>Performance</td>
-                                <td><span class="cap-status yes">✓ Millions pkt/s</span><span class="cap-note">Lock-free
-                                        queues, zero-copy, per-core scaling</span></td>
+                                <td><span class="cap-status yes">✓ Millions pkt/s</span><span class="cap-note">Thread-safe queues, zero-copy, per-core scaling</span></td>
                                 <td><span class="cap-status partial">~ 10K–50K pkt/s</span><span
                                         class="cap-note">Browser ArrayBuffer parsing</span></td>
                             </tr>
@@ -234,9 +217,15 @@
                 </div>
 
                 <p class="capabilities-summary">Both implementations share the same core DPI algorithms — <strong>SNI
-                        extraction, flow tracking, app classification, and rule matching</strong> — ported from C++ to
-                    JavaScript for browser accessibility. The C++ engine is designed for production environments, while
-                    the dashboard makes these concepts interactive and demo-ready.</p>
+                        extraction, HTTP Host header extraction, flow tracking, app classification, and rule matching</strong> — ported from C++ to
+                    JavaScript for browser accessibility. The C++ engine actually contains two codebases: a <code>main_working.cpp</code> single-thread version for learning, and a <code>dpi_mt.cpp</code> multi-threaded system built for speed.</p>
+
+                <h4 style="color: var(--accent); margin-top: 24px; font-family: 'Syne', sans-serif;">Supported Application Signatures</h4>
+                <p class="capabilities-summary" style="margin-top: 8px;">The engine can currently identify and classify over 20+ prominent applications directly from TLS and HTTP handshakes, including: <strong>Google, YouTube, Facebook, WhatsApp, Telegram, TikTok, Netflix, Cloudflare</strong>, and more. If a signature isn't matched, the payload is intelligently categorized as <em>Unknown</em> but still mapped to its underlying flow.</p>
+
+                <h4 style="color: #a78bfa; margin-top: 24px; font-family: 'Syne', sans-serif;">TCP vs UDP Breakdown</h4>
+                <p class="capabilities-summary" style="margin-top: 8px;">Under the hood, the engine explicitly differentiates between connection-oriented (TCP) and connectionless (UDP) traffic. The state machine tracks TCP flags (SYN, ACK, FIN, RST) to accurately classify flow lifecycle states (NEW → ESTABLISHED → CLOSED), while still providing best-effort timeout mapping for UDP datagrams.</p>
+
             </div>
 
             <!-- ── TLS SNI Extraction ── -->
@@ -267,6 +256,11 @@
                         </div>
                     </div>
                 </div>
+
+                <div style="margin-top: 32px;">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 8px;">The 5-Tuple (Connection Tracking)</h3>
+                    <p class="sni-intro">To properly block a connection, the engine must track every packet belonging to that flow. It does this by hashing the <strong>5-Tuple</strong>: <code>Source IP</code>, <code>Destination IP</code>, <code>Source Port</code>, <code>Destination Port</code>, and <code>Protocol (TCP/UDP)</code>. By linking the extracted SNI or HTTP Host header to this 5-Tuple, the engine knows exactly which subsequent packets to drop without needing to parse their encrypted payloads.</p>
+                </div>
             </div>
 
             <!-- ── Build & Run ── -->
@@ -276,7 +270,7 @@
 
                 <div class="build-grid">
                     <div class="build-card">
-                        <div class="build-card-label">1. Build</div>
+                        <div class="build-card-label">1. Build (Multi-Threaded)</div>
                         <div class="terminal-window">
                             <div class="terminal-bar">
                                 <span class="terminal-dot dot-red"></span>
@@ -289,12 +283,9 @@
     src/pcap_reader.cpp \
     src/packet_parser.cpp \
     src/sni_extractor.cpp \
-    src/connection_tracker.cpp \
-    src/load_balancer.cpp \
-    src/fast_path.cpp \
-    src/rule_manager.cpp \
     src/types.cpp</pre>
                         </div>
+                        <p class="build-note" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-2);">For learning, you can build the <strong>single-threaded</strong> version by compiling <code>src/main_working.cpp</code> instead.</p>
                     </div>
 
                     <div class="build-card">
@@ -369,8 +360,8 @@
             </div>
 
             <div class="showcase-footer" style="margin-top: 32px;">
-                <a href="engine/README.md" class="btn" target="_blank"> C++ Engine Docs</a>
-                <a href="https://github.com" class="btn btn-primary" target="_blank"> View on GitHub</a>
+                <a href="cpp_docs.html" class="btn"> C++ Engine Docs</a>
+                <a href="https://kshitij-singh06.github.io/DPI-Real-time-Packet-Analysis/" class="btn btn-primary" target="_blank"> View on GitHub</a>
             </div>
         </section>
 
@@ -457,6 +448,18 @@
                 </div>
             </div>
 
+            <!-- Global Traffic Timeline -->
+            <div class="dashboard-grid fade-in-scroll">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title">📈 Global Traffic Timeline</span>
+                    </div>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Live Packet Feed -->
             <div class="dashboard-grid">
                 <div class="panel full-width">
@@ -496,16 +499,6 @@
 
             <!-- Charts Row 1 -->
             <div class="dashboard-grid">
-                <!-- App Distribution -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title"> Application Distribution</span>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="appChart"></canvas>
-                    </div>
-                </div>
-
                 <!-- Top Domains -->
                 <div class="panel">
                     <div class="panel-header">
@@ -517,7 +510,7 @@
                 </div>
 
                 <!-- Blocked vs Forwarded -->
-                <div class="panel full-width">
+                <div class="panel">
                     <div class="panel-header">
                         <span class="panel-title">🚦 Blocked vs Forwarded</span>
                     </div>
@@ -527,27 +520,22 @@
                 </div>
             </div>
 
-            <!-- Toast Container -->
-            <div id="toastContainer" class="toast-container"></div>
-
-            <!-- Blocking Rules -->
-            <div class="dashboard-grid rules-section">
-                <div class="panel full-width">
+            <!-- Geo-IP World Map -->
+            <div class="dashboard-grid fade-in-scroll" id="geoMapSection" style="display:none;">
+                <div class="panel full-width" style="padding-bottom: 0;">
                     <div class="panel-header">
-                        <span class="panel-title">Blocking Rules</span>
+                        <span class="panel-title">🌍 Geo-IP Traffic Origins</span>
+                        <div class="feed-controls">
+                            <span id="geoStatus" class="badge" style="color: var(--text-3);">Awaiting lookup…</span>
+                            <button class="btn btn-sm" id="geoLookupBtn">Run Geo-IP Lookup</button>
+                        </div>
                     </div>
-                    <div class="rule-input-group">
-                        <select id="ruleType">
-                            <option value="app">Block App</option>
-                            <option value="ip">Block IP</option>
-                            <option value="domain">Block Domain</option>
-                        </select>
-                        <input type="text" id="ruleValue" placeholder="e.g. YouTube, 192.168.1.50, tiktok.com">
-                        <button class="btn btn-primary" id="addRuleBtn">Add Rule</button>
-                    </div>
-                    <div id="activeRules"></div>
+                    <div id="worldMap"></div>
                 </div>
             </div>
+
+            <!-- Toast Container -->
+            <div id="toastContainer" class="toast-container"></div>
 
             <!-- Connection Flow Map -->
             <div class="dashboard-grid">
@@ -582,11 +570,45 @@
                 </div>
             </div>
 
+            <!-- Application Distribution Section (Moved to Bottom) -->
+            <div class="dashboard-grid">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title"> Application Distribution</span>
+                    </div>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="appChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /dashboard-content -->
 
     </div><!-- /app-container -->
 
+    <!-- Hex Inspector Modal -->
+    <div id="hexModal" class="modal">
+        <div class="modal-content hex-modal-content">
+            <div class="modal-header">
+                <h3>Payload Hex Inspector</h3>
+                <span id="hexModalMeta" class="modal-meta"></span>
+                <span class="close-modal" id="hexClose">&times;</span>
+            </div>
+            <div class="modal-body hex-inspector-body">
+                <div class="hex-pane">
+                    <div class="pane-title">Hexadecimal</div>
+                    <pre id="hexOutput" class="mono-text"></pre>
+                </div>
+                <div class="ascii-pane">
+                    <div class="pane-title">ASCII</div>
+                    <pre id="asciiOutput" class="mono-text"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dashboard Controller -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script type="module" src="dashboard.js"></script>
 
 </body>

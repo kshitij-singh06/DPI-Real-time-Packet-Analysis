@@ -53,11 +53,7 @@ const packetFeedBody = $('#packetFeedBody');
 const packetFeedCount = $('#packetFeedCount');
 const packetFeedWrap = $('#packetFeedWrap');
 
-// Rules
-const ruleType = $('#ruleType');
-const ruleValue = $('#ruleValue');
-const addRuleBtn = $('#addRuleBtn');
-const activeRulesDiv = $('#activeRules');
+// Filtering
 const protoFilter = $('#protoFilter');
 
 // ─── File Handling ───────────────────────────────────────────────────────────
@@ -167,6 +163,10 @@ function finishProcessing() {
     updateCharts();
     updateConnectionTable();
     updatePacketFeed();
+
+    // Reveal Geo-IP section so the user can run a lookup
+    const geo = document.getElementById('geoMapSection');
+    if (geo) geo.style.display = '';
 }
 
 function updateProgress() {
@@ -223,6 +223,42 @@ function initCharts() {
     Chart.defaults.font.size = 11;
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
     Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
+
+    // Global Timeline (Line)
+    charts.timeline = new Chart($('#timelineChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Packets/sec',
+                data: [],
+                borderColor: '#00e5ff',
+                backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHitRadius: 10,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(148,163,184,0.06)' },
+                    ticks: { maxTicksLimit: 10 }
+                },
+                y: {
+                    grid: { color: 'rgba(148,163,184,0.06)' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 
     // App Distribution (Doughnut)
     charts.app = new Chart($('#appChart'), {
@@ -324,6 +360,14 @@ function initCharts() {
 // ─── Chart Updates ───────────────────────────────────────────────────────────
 
 function updateCharts() {
+    // Timeline Update
+    const timelineData = engine.getTimeline();
+    if (timelineData.length > 0) {
+        charts.timeline.data.labels = timelineData.map(([ts]) => new Date(ts * 1000).toLocaleTimeString([], { hour12: false }));
+        charts.timeline.data.datasets[0].data = timelineData.map(([, count]) => count);
+        charts.timeline.update('none');
+    }
+
     // App Distribution — gray out blocked apps
     const topApps = engine.getTopApps();
     const blockedApps = new Set(engine.getRules().apps.map(a => a.toLowerCase()));
@@ -556,6 +600,51 @@ function updatePacketFeed() {
         });
     });
 
+    // Hex Inspector Modal Logic
+    const hexModal = $('#hexModal');
+    const hexClose = $('#hexClose');
+    const hexOutput = $('#hexOutput');
+    const asciiOutput = $('#asciiOutput');
+    const hexModalMeta = $('#hexModalMeta');
+
+    // Close modal handling
+    hexClose.onclick = () => hexModal.classList.remove('show');
+    window.onclick = (e) => {
+        if (e.target === hexModal) hexModal.classList.remove('show');
+    };
+
+    // Attach click handlers to row itself
+    packetFeedBody.querySelectorAll('tr').forEach((tr, index) => {
+        tr.addEventListener('click', () => {
+            const pkt = slice[index];
+            if (!pkt.payloadHex) return; // No payload to show
+
+            // Format Hex Data into 16-byte chunks
+            const hexArr = pkt.payloadHex.split(' ');
+            let formattedHex = '';
+            for (let i = 0; i < hexArr.length; i += 16) {
+                const chunk = hexArr.slice(i, i + 16);
+                // Add offset prefix (e.g. 0000, 0010)
+                formattedHex += i.toString(16).padStart(4, '0') + '  ';
+                formattedHex += chunk.join(' ') + '\n';
+            }
+
+            // Format ASCII Data
+            const asciiArr = pkt.payloadAscii.split('');
+            let formattedAscii = '';
+            for (let i = 0; i < asciiArr.length; i += 16) {
+                const chunk = asciiArr.slice(i, i + 16);
+                formattedAscii += chunk.join('') + '\n';
+            }
+
+            hexOutput.textContent = formattedHex.trimEnd();
+            asciiOutput.textContent = formattedAscii.trimEnd();
+            hexModalMeta.textContent = `Packet #${pkt.id} | ${pkt.protocol} | ${pkt.size} Bytes`;
+            
+            hexModal.classList.add('show');
+        });
+    });
+
     // Auto-scroll to bottom
     packetFeedWrap.scrollTop = packetFeedWrap.scrollHeight;
 }
@@ -566,48 +655,9 @@ if (protoFilter) {
     protoFilter.addEventListener('change', () => updatePacketFeed());
 }
 
-// ─── Blocking Rules UI ───────────────────────────────────────────────────────
 
-addRuleBtn.addEventListener('click', addRule);
-ruleValue.addEventListener('keydown', (e) => { if (e.key === 'Enter') addRule(); });
 
-function addRule() {
-    const type = ruleType.value;
-    const value = ruleValue.value.trim();
-    if (!value) return;
 
-    // Capture old stats before applying rule
-    const oldBlocked = engine.stats.droppedPackets;
-
-    switch (type) {
-        case 'ip': engine.blockIP(value); break;
-        case 'app': engine.blockApp(value); break;
-        case 'domain': engine.blockDomain(value); break;
-    }
-
-    ruleValue.value = '';
-    renderRules();
-
-    // Re-process all packets with new rules
-    reprocessAll();
-
-    // Visual feedback
-    const newBlocked = engine.stats.droppedPackets;
-    const diff = newBlocked - oldBlocked;
-
-    // Flash the blocked stat card
-    const blockedCard = statBlocked.closest('.stat-card');
-    blockedCard.classList.add('pulse-danger');
-    setTimeout(() => blockedCard.classList.remove('pulse-danger'), 1200);
-
-    // Toast notification
-    const label = type === 'ip' ? 'IP' : type === 'app' ? 'App' : 'Domain';
-    if (diff > 0) {
-        showToast(`🚫 ${label}: ${value} — ${diff} packet${diff > 1 ? 's' : ''} blocked`, 'danger');
-    } else {
-        showToast(`⚠️ ${label}: ${value} — no matching packets found`, 'warning');
-    }
-}
 
 // ─── Toast Notification System ───────────────────────────────────────────────
 
@@ -629,60 +679,11 @@ function showToast(message, type = 'info') {
     }, 3500);
 }
 
-function removeRule(type, value) {
-    switch (type) {
-        case 'ip': engine.unblockIP(value); break;
-        case 'app': engine.unblockApp(value); break;
-        case 'domain': engine.unblockDomain(value); break;
-    }
-    renderRules();
-    reprocessAll();
-}
 
-function renderRules() {
-    const rules = engine.getRules();
-    activeRulesDiv.innerHTML = '';
 
-    const allRules = [
-        ...rules.ips.map(v => ({ type: 'ip', label: `IP: ${v}`, value: v })),
-        ...rules.apps.map(v => ({ type: 'app', label: `App: ${v}`, value: v })),
-        ...rules.domains.map(v => ({ type: 'domain', label: `Domain: ${v}`, value: v })),
-    ];
 
-    if (allRules.length === 0) {
-        activeRulesDiv.innerHTML = '<span style="color:var(--text-3);font-size:0.8rem;">No active blocking rules</span>';
-        return;
-    }
 
-    for (const rule of allRules) {
-        const chip = document.createElement('span');
-        chip.className = 'rule-chip';
-        chip.innerHTML = `${rule.label} <span class="remove" data-type="${rule.type}" data-value="${esc(rule.value)}">&times;</span>`;
-        chip.querySelector('.remove').addEventListener('click', () => removeRule(rule.type, rule.value));
-        activeRulesDiv.appendChild(chip);
-    }
-}
 
-function reprocessAll() {
-    // Store current rules
-    const rules = engine.getRules();
-
-    // Reset engine but keep rules
-    engine.reset();
-    for (const ip of rules.ips) engine.blockIP(ip);
-    for (const app of rules.apps) engine.blockApp(app);
-    for (const domain of rules.domains) engine.blockDomain(domain);
-
-    // Re-process all packets
-    for (const pkt of packets) {
-        engine.processPacket(pkt);
-    }
-
-    updateStats();
-    updateCharts();
-    updateConnectionTable();
-    updatePacketFeed();
-}
 
 // ─── Reset ───────────────────────────────────────────────────────────────────
 
@@ -715,7 +716,6 @@ function resetDashboard() {
 
     connectionBody.innerHTML = '';
     packetFeedBody.innerHTML = '';
-    activeRulesDiv.innerHTML = '';
 }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -802,8 +802,8 @@ renderRules();
 
 // ─── Scroll Animations ───────────────────────────────────────────────────────
 const observerOptions = {
-    threshold: 0.15,
-    rootMargin: "0px 0px -50px 0px"
+    threshold: 0,
+    rootMargin: "100px 0px 100px 0px"
 };
 
 const fadeObserver = new IntersectionObserver((entries) => {
@@ -818,3 +818,145 @@ const fadeObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.fade-in-scroll').forEach(el => {
     fadeObserver.observe(el);
 });
+
+// ─── Geo-IP World Map ─────────────────────────────────────────────────────────
+
+let geoMap = null;       // Leaflet map instance
+let geoMarkersLayer = null;
+
+const geoMapSection = document.getElementById('geoMapSection');
+const geoLookupBtn  = document.getElementById('geoLookupBtn');
+const geoStatus     = document.getElementById('geoStatus');
+
+// Helper: check if an IP is private / loopback and should be skipped
+function isPrivateIP(ip) {
+    if (!ip || ip === '—') return true;
+    return (
+        ip.startsWith('10.')       ||
+        ip.startsWith('192.168.')  ||
+        ip.startsWith('172.16.')   ||
+        ip.startsWith('172.17.')   ||
+        ip.startsWith('172.18.')   ||
+        ip.startsWith('172.19.')   ||
+        ip.startsWith('172.2')     ||
+        ip.startsWith('172.3')     ||
+        ip.startsWith('127.')      ||
+        ip.startsWith('169.254.')  ||
+        ip === '0.0.0.0'           ||
+        ip === '255.255.255.255'
+    );
+}
+
+// Initialise Leaflet map once, lazily
+function ensureMapInit() {
+    if (geoMap) return;
+
+    geoMap = L.map('worldMap', {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 1,
+        maxZoom: 10,
+        zoomControl: true,
+        attributionControl: true,
+    });
+
+    // OpenStreetMap tiles (inverted via CSS to look dark)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+    }).addTo(geoMap);
+
+    geoMarkersLayer = L.layerGroup().addTo(geoMap);
+}
+
+// Main: show section, lookup IPs, plot on map
+if (geoLookupBtn) {
+    geoLookupBtn.addEventListener('click', async () => {
+        // Gather unique public destination IPs from all flows
+        const flows = engine.getFlows();
+        const ipSet = new Set();
+        for (const flow of flows) {
+            if (!isPrivateIP(flow.dstIP)) ipSet.add(flow.dstIP);
+            if (!isPrivateIP(flow.srcIP)) ipSet.add(flow.srcIP);
+        }
+
+        const ips = [...ipSet].slice(0, 100); // ip-api free tier: 100 per batch
+
+        if (ips.length === 0) {
+            geoStatus.textContent = 'No public IPs found in traffic.';
+            return;
+        }
+
+        // Show the panel and initialise map
+        geoMapSection.style.display = '';
+        ensureMapInit();
+        setTimeout(() => geoMap.invalidateSize(), 100); // allow panel to render
+
+        geoLookupBtn.disabled = true;
+        geoStatus.textContent = `Looking up ${ips.length} IPs…`;
+
+        try {
+            // GeoJS: free, HTTPS, CORS, no key — supports BULK lookup in a single HTTP request.
+            // Up to 15,000 requests/hr. Pass all IPs as comma-separated query param.
+            const targetIps = ips.slice(0, 100); // support up to 100 IPs
+            const bulkUrl = `https://get.geojs.io/v1/ip/geo.json?ip=${targetIps.join(',')}`;
+
+            const resp = await fetch(bulkUrl);
+            if (!resp.ok) throw new Error(`GeoJS returned ${resp.status}`);
+
+            // GeoJS returns an array when multiple IPs are requested
+            let results = await resp.json();
+            if (!Array.isArray(results)) results = [results]; // single IP edge case
+
+            // Clear old markers
+            geoMarkersLayer.clearLayers();
+
+            // Per-IP: count packets from flows
+            const ipPackets = {};
+            for (const flow of flows) {
+                [flow.dstIP, flow.srcIP].forEach(ip => {
+                    if (ipSet.has(ip)) ipPackets[ip] = (ipPackets[ip] || 0) + flow.packets;
+                });
+            }
+
+            let plotted = 0;
+            for (const loc of results) {
+                const lat = parseFloat(loc.latitude);
+                const lon = parseFloat(loc.longitude);
+                if (isNaN(lat) || isNaN(lon)) continue;
+
+                const ip = loc.ip;
+                const count  = ipPackets[ip] || 1;
+                const radius = Math.max(5, Math.min(22, Math.log2(count + 1) * 3.5));
+
+                const circle = L.circleMarker([lat, lon], {
+                    radius,
+                    fillColor:   '#00e5ff',
+                    color:       '#ffffff',
+                    weight:      1,
+                    opacity:     0.8,
+                    fillOpacity: 0.55,
+                });
+
+                circle.bindPopup(`
+                    <span class="geo-popup-ip">${ip}</span>
+                    <span class="geo-popup-info">
+                        ${loc.city ? loc.city + ', ' : ''}${loc.country || 'Unknown'}
+                        ${loc.organization_name ? '<br>' + loc.organization_name : ''}
+                    </span>
+                    <span class="geo-popup-count">${count.toLocaleString()} pkts</span>
+                `);
+
+                circle.addTo(geoMarkersLayer);
+                plotted++;
+            }
+
+            geoStatus.textContent = `${plotted} locations mapped`;
+        } catch (err) {
+            geoStatus.textContent = 'Lookup failed: ' + err.message;
+            console.error('[GeoIP]', err);
+        } finally {
+            geoLookupBtn.disabled = false;
+        }
+    });
+}
