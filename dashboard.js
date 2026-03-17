@@ -38,8 +38,7 @@ const statTotal = $('#statTotal');
 const statTotalBytes = $('#statTotalBytes');
 const statForwarded = $('#statForwarded');
 const statForwardedPct = $('#statForwardedPct');
-const statBlocked = $('#statBlocked');
-const statBlockedPct = $('#statBlockedPct');
+
 const statConnections = $('#statConnections');
 const statActiveConns = $('#statActiveConns');
 const statProtocol = $('#statProtocol');
@@ -195,12 +194,10 @@ function updateStats() {
     statTotal.textContent = s.totalPackets.toLocaleString();
     statTotalBytes.textContent = formatBytes(s.totalBytes);
     statForwarded.textContent = s.forwardedPackets.toLocaleString();
-    statBlocked.textContent = s.droppedPackets.toLocaleString();
     statProtocol.textContent = `${s.tcpPackets.toLocaleString()} / ${s.udpPackets.toLocaleString()}`;
 
     const total = s.totalPackets || 1;
     statForwardedPct.textContent = ((s.forwardedPackets / total) * 100).toFixed(1) + '%';
-    statBlockedPct.textContent = ((s.droppedPackets / total) * 100).toFixed(1) + '%';
 
     const flows = engine.flows.size;
     const active = engine.getActiveConnectionCount();
@@ -309,52 +306,6 @@ function initCharts() {
             }
         }
     });
-
-    // Blocked vs Forwarded (Stacked Horizontal Bar)
-    charts.blocked = new Chart($('#blockedChart'), {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: 'Forwarded',
-                    data: [],
-                    backgroundColor: 'rgba(34,197,94,0.6)',
-                    borderColor: 'rgba(34,197,94,0.9)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                },
-                {
-                    label: 'Blocked',
-                    data: [],
-                    backgroundColor: 'rgba(239,68,68,0.6)',
-                    borderColor: 'rgba(239,68,68,0.9)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: { labels: { padding: 14, font: { size: 11 } } },
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    grid: { color: 'rgba(148,163,184,0.06)' },
-                    ticks: { font: { size: 10 } },
-                },
-                y: {
-                    stacked: true,
-                    grid: { display: false },
-                    ticks: { font: { size: 10 } },
-                }
-            }
-        }
-    });
 }
 
 // ─── Chart Updates ───────────────────────────────────────────────────────────
@@ -368,13 +319,11 @@ function updateCharts() {
         charts.timeline.update('none');
     }
 
-    // App Distribution — gray out blocked apps
+    // App Distribution
     const topApps = engine.getTopApps();
-    const blockedApps = new Set(engine.getRules().apps.map(a => a.toLowerCase()));
     charts.app.data.labels = topApps.map(([a]) => a);
     charts.app.data.datasets[0].data = topApps.map(([, c]) => c);
     charts.app.data.datasets[0].backgroundColor = topApps.map(([a]) => {
-        if (blockedApps.has(a.toLowerCase())) return 'rgba(100,116,139,0.3)';
         return APP_COLORS[a] || '#475569';
     });
     charts.app.update('none');
@@ -384,27 +333,6 @@ function updateCharts() {
     charts.domain.data.labels = topDomains.map(([d]) => truncate(d, 30));
     charts.domain.data.datasets[0].data = topDomains.map(([, c]) => c);
     charts.domain.update('none');
-
-    // Blocked vs Forwarded per app
-    const flows = engine.getFlows();
-    const appStats = {};
-    for (const f of flows) {
-        const app = f.appType || 'Unknown';
-        if (!appStats[app]) appStats[app] = { forwarded: 0, blocked: 0 };
-        if (f.state === 'BLOCKED') {
-            appStats[app].blocked += f.packets;
-        } else {
-            appStats[app].forwarded += f.packets;
-        }
-    }
-    const sortedApps = Object.entries(appStats).sort((a, b) =>
-        (b[1].forwarded + b[1].blocked) - (a[1].forwarded + a[1].blocked)
-    ).slice(0, 10);
-
-    charts.blocked.data.labels = sortedApps.map(([a]) => a);
-    charts.blocked.data.datasets[0].data = sortedApps.map(([, s]) => s.forwarded);
-    charts.blocked.data.datasets[1].data = sortedApps.map(([, s]) => s.blocked);
-    charts.blocked.update('none');
 }
 
 // ─── Connection Flow Map ─────────────────────────────────────────────────────

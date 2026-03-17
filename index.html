@@ -426,11 +426,7 @@
                     <div class="value" id="statForwarded">0</div>
                     <div class="sub" id="statForwardedPct">0%</div>
                 </div>
-                <div class="stat-card" style="--card-accent: var(--danger);">
-                    <div class="label">Blocked</div>
-                    <div class="value" id="statBlocked">0</div>
-                    <div class="sub" id="statBlockedPct">0%</div>
-                </div>
+
                 <div class="stat-card" style="--card-accent: #a78bfa;">
                     <div class="label">Connections</div>
                     <div class="value" id="statConnections">0</div>
@@ -500,7 +496,7 @@
             <!-- Charts Row 1 -->
             <div class="dashboard-grid">
                 <!-- Top Domains -->
-                <div class="panel">
+                <div class="panel full-width">
                     <div class="panel-header">
                         <span class="panel-title"> Top Domains</span>
                     </div>
@@ -509,15 +505,6 @@
                     </div>
                 </div>
 
-                <!-- Blocked vs Forwarded -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">🚦 Blocked vs Forwarded</span>
-                    </div>
-                    <div class="chart-container small">
-                        <canvas id="blockedChart"></canvas>
-                    </div>
-                </div>
             </div>
 
             <!-- Geo-IP World Map -->
