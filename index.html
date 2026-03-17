@@ -426,7 +426,11 @@
                     <div class="value" id="statForwarded">0</div>
                     <div class="sub" id="statForwardedPct">0%</div>
                 </div>
-
+                <div class="stat-card" style="--card-accent: var(--danger);">
+                    <div class="label">Blocked</div>
+                    <div class="value" id="statBlocked">0</div>
+                    <div class="sub" id="statBlockedPct">0%</div>
+                </div>
                 <div class="stat-card" style="--card-accent: #a78bfa;">
                     <div class="label">Connections</div>
                     <div class="value" id="statConnections">0</div>
@@ -495,8 +499,18 @@
 
             <!-- Charts Row 1 -->
             <div class="dashboard-grid">
+                <!-- App Distribution -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title"> Application Distribution</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="appChart"></canvas>
+                    </div>
+                </div>
+
                 <!-- Top Domains -->
-                <div class="panel full-width">
+                <div class="panel">
                     <div class="panel-header">
                         <span class="panel-title"> Top Domains</span>
                     </div>
@@ -505,24 +519,38 @@
                     </div>
                 </div>
 
-            </div>
-
-            <!-- Geo-IP World Map -->
-            <div class="dashboard-grid fade-in-scroll" id="geoMapSection" style="display:none;">
-                <div class="panel full-width" style="padding-bottom: 0;">
+                <!-- Blocked vs Forwarded -->
+                <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">🌍 Geo-IP Traffic Origins</span>
-                        <div class="feed-controls">
-                            <span id="geoStatus" class="badge" style="color: var(--text-3);">Awaiting lookup…</span>
-                            <button class="btn btn-sm" id="geoLookupBtn">Run Geo-IP Lookup</button>
-                        </div>
+                        <span class="panel-title">🚦 Blocked vs Forwarded</span>
                     </div>
-                    <div id="worldMap"></div>
+                    <div class="chart-container small">
+                        <canvas id="blockedChart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Toast Container -->
             <div id="toastContainer" class="toast-container"></div>
+
+            <!-- Blocking Rules -->
+            <div class="dashboard-grid rules-section">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <span class="panel-title">Blocking Rules</span>
+                    </div>
+                    <div class="rule-input-group">
+                        <select id="ruleType">
+                            <option value="app">Block App</option>
+                            <option value="ip">Block IP</option>
+                            <option value="domain">Block Domain</option>
+                        </select>
+                        <input type="text" id="ruleValue" placeholder="e.g. YouTube, 192.168.1.50, tiktok.com">
+                        <button class="btn btn-primary" id="addRuleBtn">Add Rule</button>
+                    </div>
+                    <div id="activeRules"></div>
+                </div>
+            </div>
 
             <!-- Connection Flow Map -->
             <div class="dashboard-grid">
@@ -557,15 +585,17 @@
                 </div>
             </div>
 
-            <!-- Application Distribution Section (Moved to Bottom) -->
-            <div class="dashboard-grid">
-                <div class="panel full-width">
+            <!-- Geo-IP World Map -->
+            <div class="dashboard-grid fade-in-scroll" id="geoMapSection" style="display:none;">
+                <div class="panel full-width" style="padding-bottom: 0;">
                     <div class="panel-header">
-                        <span class="panel-title"> Application Distribution</span>
+                        <span class="panel-title">🌍 Geo-IP Traffic Origins</span>
+                        <div class="feed-controls">
+                            <span id="geoStatus" class="badge" style="color: var(--text-3);">Awaiting lookup…</span>
+                            <button class="btn btn-sm" id="geoLookupBtn">Run Geo-IP Lookup</button>
+                        </div>
                     </div>
-                    <div class="chart-container" style="height: 400px;">
-                        <canvas id="appChart"></canvas>
-                    </div>
+                    <div id="worldMap"></div>
                 </div>
             </div>
 

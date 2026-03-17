@@ -38,7 +38,8 @@ const statTotal = $('#statTotal');
 const statTotalBytes = $('#statTotalBytes');
 const statForwarded = $('#statForwarded');
 const statForwardedPct = $('#statForwardedPct');
-
+const statBlocked = $('#statBlocked');
+const statBlockedPct = $('#statBlockedPct');
 const statConnections = $('#statConnections');
 const statActiveConns = $('#statActiveConns');
 const statProtocol = $('#statProtocol');
@@ -52,7 +53,11 @@ const packetFeedBody = $('#packetFeedBody');
 const packetFeedCount = $('#packetFeedCount');
 const packetFeedWrap = $('#packetFeedWrap');
 
-// Filtering
+// Rules
+const ruleType = $('#ruleType');
+const ruleValue = $('#ruleValue');
+const addRuleBtn = $('#addRuleBtn');
+const activeRulesDiv = $('#activeRules');
 const protoFilter = $('#protoFilter');
 
 // ─── File Handling ───────────────────────────────────────────────────────────
@@ -194,10 +199,12 @@ function updateStats() {
     statTotal.textContent = s.totalPackets.toLocaleString();
     statTotalBytes.textContent = formatBytes(s.totalBytes);
     statForwarded.textContent = s.forwardedPackets.toLocaleString();
+    statBlocked.textContent = s.droppedPackets.toLocaleString();
     statProtocol.textContent = `${s.tcpPackets.toLocaleString()} / ${s.udpPackets.toLocaleString()}`;
 
     const total = s.totalPackets || 1;
     statForwardedPct.textContent = ((s.forwardedPackets / total) * 100).toFixed(1) + '%';
+    statBlockedPct.textContent = ((s.droppedPackets / total) * 100).toFixed(1) + '%';
 
     const flows = engine.flows.size;
     const active = engine.getActiveConnectionCount();
@@ -306,6 +313,52 @@ function initCharts() {
             }
         }
     });
+
+    // Blocked vs Forwarded (Stacked Horizontal Bar)
+    charts.blocked = new Chart($('#blockedChart'), {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Forwarded',
+                    data: [],
+                    backgroundColor: 'rgba(34,197,94,0.6)',
+                    borderColor: 'rgba(34,197,94,0.9)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Blocked',
+                    data: [],
+                    backgroundColor: 'rgba(239,68,68,0.6)',
+                    borderColor: 'rgba(239,68,68,0.9)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { labels: { padding: 14, font: { size: 11 } } },
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: { color: 'rgba(148,163,184,0.06)' },
+                    ticks: { font: { size: 10 } },
+                },
+                y: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } },
+                }
+            }
+        }
+    });
 }
 
 // ─── Chart Updates ───────────────────────────────────────────────────────────
@@ -319,11 +372,13 @@ function updateCharts() {
         charts.timeline.update('none');
     }
 
-    // App Distribution
+    // App Distribution — gray out blocked apps
     const topApps = engine.getTopApps();
+    const blockedApps = new Set(engine.getRules().apps.map(a => a.toLowerCase()));
     charts.app.data.labels = topApps.map(([a]) => a);
     charts.app.data.datasets[0].data = topApps.map(([, c]) => c);
     charts.app.data.datasets[0].backgroundColor = topApps.map(([a]) => {
+        if (blockedApps.has(a.toLowerCase())) return 'rgba(100,116,139,0.3)';
         return APP_COLORS[a] || '#475569';
     });
     charts.app.update('none');
@@ -333,6 +388,27 @@ function updateCharts() {
     charts.domain.data.labels = topDomains.map(([d]) => truncate(d, 30));
     charts.domain.data.datasets[0].data = topDomains.map(([, c]) => c);
     charts.domain.update('none');
+
+    // Blocked vs Forwarded per app
+    const flows = engine.getFlows();
+    const appStats = {};
+    for (const f of flows) {
+        const app = f.appType || 'Unknown';
+        if (!appStats[app]) appStats[app] = { forwarded: 0, blocked: 0 };
+        if (f.state === 'BLOCKED') {
+            appStats[app].blocked += f.packets;
+        } else {
+            appStats[app].forwarded += f.packets;
+        }
+    }
+    const sortedApps = Object.entries(appStats).sort((a, b) =>
+        (b[1].forwarded + b[1].blocked) - (a[1].forwarded + a[1].blocked)
+    ).slice(0, 10);
+
+    charts.blocked.data.labels = sortedApps.map(([a]) => a);
+    charts.blocked.data.datasets[0].data = sortedApps.map(([, s]) => s.forwarded);
+    charts.blocked.data.datasets[1].data = sortedApps.map(([, s]) => s.blocked);
+    charts.blocked.update('none');
 }
 
 // ─── Connection Flow Map ─────────────────────────────────────────────────────
@@ -583,9 +659,48 @@ if (protoFilter) {
     protoFilter.addEventListener('change', () => updatePacketFeed());
 }
 
+// ─── Blocking Rules UI ───────────────────────────────────────────────────────
 
+addRuleBtn.addEventListener('click', addRule);
+ruleValue.addEventListener('keydown', (e) => { if (e.key === 'Enter') addRule(); });
 
+function addRule() {
+    const type = ruleType.value;
+    const value = ruleValue.value.trim();
+    if (!value) return;
 
+    // Capture old stats before applying rule
+    const oldBlocked = engine.stats.droppedPackets;
+
+    switch (type) {
+        case 'ip': engine.blockIP(value); break;
+        case 'app': engine.blockApp(value); break;
+        case 'domain': engine.blockDomain(value); break;
+    }
+
+    ruleValue.value = '';
+    renderRules();
+
+    // Re-process all packets with new rules
+    reprocessAll();
+
+    // Visual feedback
+    const newBlocked = engine.stats.droppedPackets;
+    const diff = newBlocked - oldBlocked;
+
+    // Flash the blocked stat card
+    const blockedCard = statBlocked.closest('.stat-card');
+    blockedCard.classList.add('pulse-danger');
+    setTimeout(() => blockedCard.classList.remove('pulse-danger'), 1200);
+
+    // Toast notification
+    const label = type === 'ip' ? 'IP' : type === 'app' ? 'App' : 'Domain';
+    if (diff > 0) {
+        showToast(`🚫 ${label}: ${value} — ${diff} packet${diff > 1 ? 's' : ''} blocked`, 'danger');
+    } else {
+        showToast(`⚠️ ${label}: ${value} — no matching packets found`, 'warning');
+    }
+}
 
 // ─── Toast Notification System ───────────────────────────────────────────────
 
@@ -607,11 +722,60 @@ function showToast(message, type = 'info') {
     }, 3500);
 }
 
+function removeRule(type, value) {
+    switch (type) {
+        case 'ip': engine.unblockIP(value); break;
+        case 'app': engine.unblockApp(value); break;
+        case 'domain': engine.unblockDomain(value); break;
+    }
+    renderRules();
+    reprocessAll();
+}
 
+function renderRules() {
+    const rules = engine.getRules();
+    activeRulesDiv.innerHTML = '';
 
+    const allRules = [
+        ...rules.ips.map(v => ({ type: 'ip', label: `IP: ${v}`, value: v })),
+        ...rules.apps.map(v => ({ type: 'app', label: `App: ${v}`, value: v })),
+        ...rules.domains.map(v => ({ type: 'domain', label: `Domain: ${v}`, value: v })),
+    ];
 
+    if (allRules.length === 0) {
+        activeRulesDiv.innerHTML = '<span style="color:var(--text-3);font-size:0.8rem;">No active blocking rules</span>';
+        return;
+    }
 
+    for (const rule of allRules) {
+        const chip = document.createElement('span');
+        chip.className = 'rule-chip';
+        chip.innerHTML = `${rule.label} <span class="remove" data-type="${rule.type}" data-value="${esc(rule.value)}">&times;</span>`;
+        chip.querySelector('.remove').addEventListener('click', () => removeRule(rule.type, rule.value));
+        activeRulesDiv.appendChild(chip);
+    }
+}
 
+function reprocessAll() {
+    // Store current rules
+    const rules = engine.getRules();
+
+    // Reset engine but keep rules
+    engine.reset();
+    for (const ip of rules.ips) engine.blockIP(ip);
+    for (const app of rules.apps) engine.blockApp(app);
+    for (const domain of rules.domains) engine.blockDomain(domain);
+
+    // Re-process all packets
+    for (const pkt of packets) {
+        engine.processPacket(pkt);
+    }
+
+    updateStats();
+    updateCharts();
+    updateConnectionTable();
+    updatePacketFeed();
+}
 
 // ─── Reset ───────────────────────────────────────────────────────────────────
 
@@ -644,6 +808,7 @@ function resetDashboard() {
 
     connectionBody.innerHTML = '';
     packetFeedBody.innerHTML = '';
+    activeRulesDiv.innerHTML = '';
 }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
