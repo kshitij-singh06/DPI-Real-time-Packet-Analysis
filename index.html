@@ -371,7 +371,7 @@
                 <div class="header-left">
                                         <div>
                         <h2><span class="gradient-text">Live Dashboard</span></h2>
-                        <p class="subtitle">Drop a PCAP file to analyze traffic</p>
+                        <p class="subtitle">Drop a PCAP file to analyze traffic (policy simulation in browser)</p>
                     </div>
                 </div>
                 <div class="header-right">
@@ -427,7 +427,7 @@
                     <div class="sub" id="statForwardedPct">0%</div>
                 </div>
                 <div class="stat-card" style="--card-accent: var(--danger);">
-                    <div class="label">Blocked</div>
+                    <div class="label">Simulated Blocked</div>
                     <div class="value" id="statBlocked">0</div>
                     <div class="sub" id="statBlockedPct">0%</div>
                 </div>
@@ -519,10 +519,10 @@
                     </div>
                 </div>
 
-                <!-- Blocked vs Forwarded -->
+                <!-- Simulated Blocked vs Forwarded -->
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">🚦 Blocked vs Forwarded</span>
+                        <span class="panel-title">🚦 Simulated Blocked vs Forwarded</span>
                     </div>
                     <div class="chart-container small">
                         <canvas id="blockedChart"></canvas>
@@ -533,21 +533,22 @@
             <!-- Toast Container -->
             <div id="toastContainer" class="toast-container"></div>
 
-            <!-- Blocking Rules -->
+            <!-- Policy Simulation Rules -->
             <div class="dashboard-grid rules-section">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">Blocking Rules</span>
+                        <span class="panel-title">Policy Simulation Rules</span>
                     </div>
                     <div class="rule-input-group">
                         <select id="ruleType">
-                            <option value="app">Block App</option>
-                            <option value="ip">Block IP</option>
-                            <option value="domain">Block Domain</option>
+                            <option value="app">Simulate App Block</option>
+                            <option value="ip">Simulate IP Block</option>
+                            <option value="domain">Simulate Domain Block</option>
                         </select>
                         <input type="text" id="ruleValue" placeholder="e.g. YouTube, 192.168.1.50, tiktok.com">
-                        <button class="btn btn-primary" id="addRuleBtn">Add Rule</button>
+                        <button class="btn btn-primary" id="addRuleBtn">Add Simulation Rule</button>
                     </div>
+                    <p class="build-note" style="margin-top:10px;">Dashboard-only simulation: packets are re-labeled in analysis; live network traffic is not intercepted here.</p>
                     <div id="activeRules"></div>
                 </div>
             </div>

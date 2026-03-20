@@ -574,7 +574,7 @@ function updatePacketFeed() {
                 : '<span style="color:var(--text-3);">—</span>'
             }</td>
             <td>${pkt.action === 'BLOCKED'
-                ? '<span class="badge badge-blocked">BLOCKED</span>'
+                ? '<span class="badge badge-blocked">SIM-BLOCKED</span>'
                 : '<span class="badge badge-forward">FORWARD</span>'
             }</td>
         `;
@@ -659,7 +659,7 @@ if (protoFilter) {
     protoFilter.addEventListener('change', () => updatePacketFeed());
 }
 
-// ─── Blocking Rules UI ───────────────────────────────────────────────────────
+// ─── Policy Simulation Rules UI ──────────────────────────────────────────────
 
 addRuleBtn.addEventListener('click', addRule);
 ruleValue.addEventListener('keydown', (e) => { if (e.key === 'Enter') addRule(); });
@@ -669,7 +669,7 @@ function addRule() {
     const value = ruleValue.value.trim();
     if (!value) return;
 
-    // Capture old stats before applying rule
+    // Capture old stats before applying simulation rule
     const oldBlocked = engine.stats.droppedPackets;
 
     switch (type) {
@@ -681,14 +681,14 @@ function addRule() {
     ruleValue.value = '';
     renderRules();
 
-    // Re-process all packets with new rules
+    // Re-process all packets with updated simulation rules
     reprocessAll();
 
     // Visual feedback
     const newBlocked = engine.stats.droppedPackets;
     const diff = newBlocked - oldBlocked;
 
-    // Flash the blocked stat card
+    // Flash the simulated-blocked stat card
     const blockedCard = statBlocked.closest('.stat-card');
     blockedCard.classList.add('pulse-danger');
     setTimeout(() => blockedCard.classList.remove('pulse-danger'), 1200);
@@ -696,9 +696,9 @@ function addRule() {
     // Toast notification
     const label = type === 'ip' ? 'IP' : type === 'app' ? 'App' : 'Domain';
     if (diff > 0) {
-        showToast(`🚫 ${label}: ${value} — ${diff} packet${diff > 1 ? 's' : ''} blocked`, 'danger');
+        showToast(`🚫 ${label}: ${value} — ${diff} packet${diff > 1 ? 's' : ''} simulated as blocked`, 'danger');
     } else {
-        showToast(`⚠️ ${label}: ${value} — no matching packets found`, 'warning');
+        showToast(`⚠️ ${label}: ${value} — no matching packets found in simulation`, 'warning');
     }
 }
 
@@ -743,7 +743,7 @@ function renderRules() {
     ];
 
     if (allRules.length === 0) {
-        activeRulesDiv.innerHTML = '<span style="color:var(--text-3);font-size:0.8rem;">No active blocking rules</span>';
+        activeRulesDiv.innerHTML = '<span style="color:var(--text-3);font-size:0.8rem;">No active simulation rules</span>';
         return;
     }
 
