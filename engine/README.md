@@ -889,6 +889,18 @@ g++ -std=c++17 -pthread -O2 -I include -o dpi_engine \
     src/types.cpp
 ```
 
+**Live Real-Time Tracker Version (Requires libpcap/Npcap):**
+```bash
+g++ -std=c++17 -pthread -O2 -I include -o dpi_live \
+    src/dpi_live.cpp \
+    src/pcap_reader.cpp \
+    src/packet_parser.cpp \
+    src/sni_extractor.cpp \
+    src/types.cpp \
+    -lpcap
+```
+
+
 ### Running
 
 **Basic usage:**
@@ -903,6 +915,13 @@ g++ -std=c++17 -pthread -O2 -I include -o dpi_engine \
     --block-app TikTok \
     --block-ip 192.168.1.50 \
     --block-domain facebook
+```
+
+**Live Real-time Capture (Using dpi_live):**
+```bash
+./dpi_live --live default live_output.pcap --block-app YouTube
+# Or specify interface name like eth0 or Wi-Fi
+./dpi_live --live eth0 live_output.pcap --block-app YouTube
 ```
 
 **Configure threads (multi-threaded only):**

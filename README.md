@@ -208,8 +208,29 @@ Windows (MSVC manual compile pattern shown in `engine/WINDOWS_SETUP.md`):
 dpi_engine.exe test_dpi.pcap output.pcap
 ```
 
-### `dpi_mt.cpp` CLI options
+### Option C — Build Live DPI Tracker (`dpi_live.cpp`, needs libpcap)
 
+From `engine/`:
+
+```bash
+g++ -std=c++17 -pthread -O2 -I include -o dpi_live \
+    src/dpi_live.cpp \
+    src/pcap_reader.cpp \
+    src/packet_parser.cpp \
+    src/sni_extractor.cpp \
+    src/types.cpp \
+    -lpcap
+```
+
+Run (Live default interface):
+
+```bash
+./dpi_live --live default live.pcap --block-app YouTube --block-domain facebook.com
+```
+
+### `dpi_mt.cpp` / `dpi_live.cpp` CLI options
+
+- `--live <device>` (dpi_live only)
 - `--block-ip <ip>`
 - `--block-app <app>`
 - `--block-domain <domain>`
