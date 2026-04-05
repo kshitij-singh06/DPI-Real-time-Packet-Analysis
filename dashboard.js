@@ -282,7 +282,7 @@ function initCharts() {
             cutout: '62%',
             plugins: {
                 legend: {
-                    position: 'right',
+                    position: 'bottom',
                     labels: { padding: 14, font: { size: 11 } }
                 },
             }

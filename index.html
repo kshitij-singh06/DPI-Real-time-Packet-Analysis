@@ -23,6 +23,25 @@
 </head>
 
 <body>
+
+    <!-- ─── Sticky Navbar ─── -->
+    <nav class="navbar" id="navbar">
+        <div class="navbar-inner">
+            <a href="#" class="navbar-brand">NetScope<span class="navbar-brand-dot">.</span></a>
+            <button class="navbar-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="navbar-links" id="navLinks">
+                <li><a href="#architecture-section" class="nav-link" data-section="architecture-section">Architecture</a></li>
+                <li><a href="#challenges-section" class="nav-link" data-section="challenges-section">Challenges</a></li>
+                <li><a href="#dashboard-section" class="nav-link" data-section="dashboard-section">Dashboard</a></li>
+                <li><a href="cpp_features/index.html" class="nav-link">Engine Features</a></li>
+                <li><a href="cpp_docs.html" class="nav-link">Engine Docs</a></li>
+                <li><a href="https://kshitij-singh06.github.io/DPI-Real-time-Packet-Analysis/" class="nav-link nav-github" target="_blank">GitHub ↗</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="app-container">
 
         <!-- HERO SECTION -->
@@ -42,10 +61,10 @@
                     Built with a multi-threaded C++17 engine and a zero-dependency browser dashboard.
                 </p>
                 <div class="hero-actions">
-                    <a href="#dashboard-section" class="btn btn-primary btn-lg">▶ Dashboard Demo</a>
+                    <a href="#dashboard-section" class="btn btn-primary btn-lg">Dashboard Demo</a>
                     <a href="#architecture-section" class="btn btn-lg"> Architecture</a>
-                    <a href="cpp_features/index.html" class="btn btn-lg"> C++ Features</a>
-                    <a href="cpp_docs.html" class="btn btn-lg"> C++ Docs</a>
+                    <a href="cpp_features/index.html" class="btn btn-lg"> Engine Features</a>
+                    <a href="cpp_docs.html" class="btn btn-lg"> Engine Docs</a>
                     <a href="https://kshitij-singh06.github.io/DPI-Real-time-Packet-Analysis/" class="btn btn-lg" target="_blank"> GitHub</a>
                 </div>
                 
@@ -145,8 +164,7 @@
                 <h3>Key Design Decisions</h3>
                 <div class="decision-grid">
                     <div class="decision-card">
-                        <div class="decision-icon">🔗</div>
-                        <h4>Why Consistent Hashing?</h4>
+                                                <h4>Why Consistent Hashing?</h4>
                         <p>A TCP connection spans many packets (SYN, data, FIN). The engine must see <em>all</em>
                             packets from a flow to track its state — from the initial handshake through TLS negotiation
                             to app classification. Consistent hashing on the five-tuple guarantees this without a global
@@ -360,8 +378,163 @@
             </div>
 
             <div class="showcase-footer" style="margin-top: 32px;">
-                <a href="cpp_docs.html" class="btn"> C++ Engine Docs</a>
+                <a href="cpp_docs.html" class="btn"> Engine Docs</a>
                 <a href="https://kshitij-singh06.github.io/DPI-Real-time-Packet-Analysis/" class="btn btn-primary" target="_blank"> View on GitHub</a>
+            </div>
+        </section>
+
+        <!-- ENGINEERING CHALLENGES SECTION -->
+        <section class="challenges-section fade-in-scroll" id="challenges-section">
+            <div class="section-header">
+                <h2><span class="gradient-text">Engineering Challenges</span></h2>
+                <p class="section-subtitle">The hard problems encountered while building a real multi-threaded DPI engine from scratch</p>
+            </div>
+
+            <div class="challenges-grid">
+
+                <!-- Challenge 1 -->
+                <div class="challenge-card">
+                    <div class="challenge-num">01</div>
+                    <div class="challenge-body">
+                        <h3>Parsing Variable-Length TLS Structures</h3>
+                        <p>
+                            TLS records don't have a fixed format. The ClientHello message contains a chain of
+                            variable-length fields — cipher suites, session IDs, compression methods — each
+                            prefixed with a length tag. Parsing these correctly required careful offset arithmetic
+                            and bounds checking at every step to avoid reading past the packet boundary.
+                        </p>
+                        <p>
+                            The SNI extension itself is nested three levels deep, inside an extensions list, inside
+                            the ClientHello, inside the TLS record. A single off-by-one error silently produces
+                            garbage — the engine has to validate each length field before advancing the read pointer.
+                        </p>
+                        <div class="challenge-tag">TLS 1.2 / 1.3 · ClientHello · Extension Parsing · Bounds Checking</div>
+                    </div>
+                </div>
+
+                <!-- Challenge 2 -->
+                <div class="challenge-card">
+                    <div class="challenge-num">02</div>
+                    <div class="challenge-body">
+                        <h3>Maintaining Flow State via Five-Tuple Hashing</h3>
+                        <p>
+                            A single TCP connection spans dozens to thousands of packets. To track its state
+                            (NEW → ESTABLISHED → CLASSIFIED → CLOSED), every packet must be mapped to the
+                            correct flow entry. The engine uses a <strong>five-tuple hash</strong>
+                            — (srcIP, dstIP, srcPort, dstPort, protocol) — to build a stable connection key.
+                        </p>
+                        <p>
+                            A subtle problem: packets arrive in both directions. A hash that doesn't normalize
+                            direction produces two separate flow entries for the same connection. The solution was
+                            to sort the endpoint pair before hashing, so both directions always resolve to the
+                            same key.
+                        </p>
+                        <div class="challenge-tag">Flow Tracking · Hash Maps · Bidirectional Normalization · State Machine</div>
+                    </div>
+                </div>
+
+                <!-- Challenge 3 -->
+                <div class="challenge-card">
+                    <div class="challenge-num">03</div>
+                    <div class="challenge-body">
+                        <h3>Building a Multi-Threaded Packet Processing Pipeline</h3>
+                        <p>
+                            Moving from a single-threaded loop to a pipelined architecture introduced coordination
+                            complexity that doesn't exist in sequential code. The pipeline has four stages — PCAP
+                            reader, load balancers, fast-path workers, and an output writer — each running on
+                            separate threads and communicating via thread-safe queues.
+                        </p>
+                        <p>
+                            Designing a shutdown sequence was particularly tricky. Each stage needs to drain its
+                            queue before signaling termination downstream, otherwise packets in-flight at shutdown
+                            silently disappear. This required careful use of sentinel values and atomic flags.
+                        </p>
+                        <div class="challenge-tag">C++17 Threads · Lock-Free Queues · Pipeline Design · Graceful Shutdown</div>
+                    </div>
+                </div>
+
+                <!-- Challenge 4 -->
+                <div class="challenge-card">
+                    <div class="challenge-num">04</div>
+                    <div class="challenge-body">
+                        <h3>Ensuring Flow Affinity Across Workers</h3>
+                        <p>
+                            With multiple fast-path workers running in parallel, there's no guarantee that packets
+                            from the same TCP connection land on the same worker — unless you explicitly enforce it.
+                            If two workers each see half the packets of a TLS handshake, neither will ever extract
+                            the SNI because neither sees the complete ClientHello.
+                        </p>
+                        <p>
+                            The solution is <strong>consistent hashing</strong> on the five-tuple at the load
+                            balancer layer, mapping each connection deterministically to a single worker. Since
+                            each worker owns its own slice of flows, there are no locks on connection state —
+                            concurrent reads and writes are structurally impossible.
+                        </p>
+                        <div class="challenge-tag">Consistent Hashing · Flow Affinity · Lock-Free State · Worker Isolation</div>
+                    </div>
+                </div>
+
+                <!-- Challenge 5 -->
+                <div class="challenge-card">
+                    <div class="challenge-num">05</div>
+                    <div class="challenge-body">
+                        <h3>Handling Incomplete and Truncated Packets</h3>
+                        <p>
+                            Real-world PCAP files contain packets that were captured before they finished
+                            transmitting — the PCAP header reports a captured length shorter than the actual
+                            wire length. Any attempt to parse headers past the captured length will read
+                            uninitialised memory or crash.
+                        </p>
+                        <p>
+                            Every parsing function in the engine validates available bytes before advancing. For
+                            TCP segments spanning multiple packets (fragmented payloads), the engine tracks the
+                            reassembly state per-flow and defers DPI until enough bytes are accumulated — gracefully
+                            marking the flow as INCOMPLETE rather than producing a false classification.
+                        </p>
+                        <div class="challenge-tag">PCAP Truncation · Length Validation · Payload Reassembly · Defensive Parsing</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- What I Learned -->
+            <div class="learned-section">
+                <h3>What I Learned</h3>
+                <p class="learned-intro">
+                    Building this project filled in a lot of gaps that textbooks leave out — the kind of
+                    knowledge you only get by actually pushing packets through a parser.
+                </p>
+                <div class="learned-grid">
+                    <div class="learned-item">
+                        <h4>Packet Parsing</h4>
+                        <p>Reading raw bytes from a PCAP file forces you to understand Ethernet, IP, TCP, and UDP
+                            headers at the bit level — not just conceptually, but as actual struct offsets in a buffer.</p>
+                    </div>
+                    <div class="learned-item">
+                        <h4>TLS Handshake Structure</h4>
+                        <p>The TLS ClientHello is a surprisingly information-rich message that leaks the destination
+                            hostname in plaintext even over an encrypted channel — and parsing it manually makes
+                            that very concrete.</p>
+                    </div>
+                    <div class="learned-item">
+                        <h4>Flow Tracking</h4>
+                        <p>Stateful packet inspection isn't just about individual packets — it's about
+                            reconstructing the narrative of a connection across time, which requires robust
+                            hash maps and lifecycle state machines.</p>
+                    </div>
+                    <div class="learned-item">
+                        <h4>Multi-Threaded Architectures</h4>
+                        <p>A staged pipeline where each layer runs on its own thread scales better than a
+                            shared thread-pool, especially when work can be partitioned by flow — it
+                            eliminates contention at the source rather than managing it with locks.</p>
+                    </div>
+                    <div class="learned-item">
+                        <h4>Producer-Consumer Queues</h4>
+                        <p>Thread-safe queues are the connective tissue of any pipeline. Getting the
+                            blocking, draining, and shutdown semantics right is harder than it looks —
+                            and getting it wrong causes subtle data loss that only shows up under load.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -452,7 +625,7 @@
             <div class="dashboard-grid fade-in-scroll">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">📈 Global Traffic Timeline</span>
+                        <span class="panel-title">Global Traffic Timeline</span>
                     </div>
                     <div class="chart-container" style="height: 200px;">
                         <canvas id="timelineChart"></canvas>
@@ -464,7 +637,7 @@
             <div class="dashboard-grid">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title"><span class="icon">📡</span> Live Packet Feed</span>
+                        <span class="panel-title"> Live Packet Feed</span>
                         <div class="feed-controls">
                             <select id="protoFilter" class="filter-select" title="Filter by protocol">
                                 <option value="ALL">All Protocols</option>
@@ -522,7 +695,7 @@
                 <!-- Simulated Blocked vs Forwarded -->
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">🚦 Simulated Blocked vs Forwarded</span>
+                        <span class="panel-title">Simulated Blocked vs Forwarded</span>
                     </div>
                     <div class="chart-container small">
                         <canvas id="blockedChart"></canvas>
@@ -557,7 +730,7 @@
             <div class="dashboard-grid">
                 <div class="panel full-width">
                     <div class="panel-header">
-                        <span class="panel-title">🗺️ Connection Flow Map</span>
+                        <span class="panel-title"> Connection Flow Map</span>
                         <div class="feed-controls">
                             <button class="btn btn-sm" id="connViewToggle" title="Toggle grouped/flat view">📊
                                 Grouped</button>
@@ -628,6 +801,45 @@
     <!-- Dashboard Controller -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script type="module" src="dashboard.js"></script>
+
+    <!-- Navbar scroll-spy & mobile toggle -->
+    <script>
+        (function () {
+            const navbar = document.getElementById('navbar');
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            const sections = ['architecture-section', 'challenges-section', 'dashboard-section'];
+
+            // Scroll: add shadow + shrink when not at top
+            window.addEventListener('scroll', () => {
+                navbar.classList.toggle('scrolled', window.scrollY > 20);
+
+                // Scroll-spy: highlight active section link
+                let current = '';
+                sections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && window.scrollY >= el.offsetTop - 90) current = id;
+                });
+                document.querySelectorAll('.nav-link[data-section]').forEach(link => {
+                    link.classList.toggle('active', link.dataset.section === current);
+                });
+            }, { passive: true });
+
+            // Mobile toggle
+            navToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('open');
+                navToggle.classList.toggle('open');
+            });
+
+            // Close mobile menu on link click
+            navLinks.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', () => {
+                    navLinks.classList.remove('open');
+                    navToggle.classList.remove('open');
+                });
+            });
+        })();
+    </script>
 
 </body>
 

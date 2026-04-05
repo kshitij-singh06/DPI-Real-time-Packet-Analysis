@@ -54,7 +54,7 @@
         }
 
         .firewall-banner::before {
-            content: '🛡️';
+            content: '';
             position: absolute;
             right: 24px;
             top: 50%;
@@ -229,7 +229,7 @@
 
         <!-- ── Firewall Banner ── -->
         <div class="firewall-banner">
-            <h2>🛡️ Firewall Mode <span class="fire-tag">PRODUCTION-READY</span></h2>
+            <h2>Firewall Mode</h2>
             <p>The C++ engine can function as a <strong>Layer 7 application firewall</strong>. Unlike traditional
                 firewalls that only filter by IP/port, the DPI engine inspects packet payloads to identify
                 <em>which application</em> generated the traffic — then blocks or forwards accordingly.</p>
@@ -239,19 +239,19 @@
 
             <div class="fw-use-cases">
                 <div class="fw-use-case">
-                    <strong>🏢 Enterprise Filtering</strong>
+                    <strong>Enterprise Filtering</strong>
                     <span>Block YouTube, TikTok, Netflix on a corporate network by app name alone</span>
                 </div>
                 <div class="fw-use-case">
-                    <strong>🔒 Parental Controls</strong>
+                    <strong>Parental Controls</strong>
                     <span>Block specific domains with wildcard matching — <code>*.tiktok.com</code></span>
                 </div>
                 <div class="fw-use-case">
-                    <strong>📊 Traffic Shaping</strong>
+                    <strong>Traffic Shaping</strong>
                     <span>Identify bandwidth-heavy apps and selectively drop or throttle</span>
                 </div>
                 <div class="fw-use-case">
-                    <strong>🕵️ Threat Detection</strong>
+                    <strong>Threat Detection</strong>
                     <span>Detect and drop connections to known malicious IPs or domains</span>
                 </div>
             </div>
@@ -278,10 +278,10 @@
 
         <!-- ── Multi-Threading ── -->
         <div class="feature-section">
-            <h2>⚡ Multi-Threaded Pipeline</h2>
+            <h2>Multi-Threaded Pipeline</h2>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🧵</span> Thread Architecture
+                <h3>Thread Architecture
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>The engine runs a multi-stage pipeline: <strong>PCAP Reader → Load Balancers → Fast Path Workers → Output Writer</strong>,
                     each as a separate thread. This means packet reading, inspection, and output writing all happen concurrently.</p>
@@ -301,7 +301,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🔗</span> Consistent Hashing Load Balancing
+                <h3>Consistent Hashing Load Balancing
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Load balancers use <strong>FiveTupleHash</strong> (src IP, dst IP, src port, dst port, protocol) to route
                     all packets from the same connection to the <em>same</em> Fast Path worker. This guarantees
@@ -309,7 +309,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🔒</span> Thread-Safe Queues with Backpressure
+                <h3>Thread-Safe Queues with Backpressure
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Each inter-thread queue (<code>TSQueue&lt;T&gt;</code>) uses mutex + condition variables with a
                     configurable max size (default: 10,000). When a queue is full, the producer blocks until space
@@ -317,7 +317,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">📊</span> Atomic Statistics
+                <h3>Atomic Statistics
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>All counters (total packets, forwarded, dropped, TCP/UDP counts) use <code>std::atomic&lt;uint64_t&gt;</code>
                     for lock-free thread-safe updates. Per-app stats use a separate mutex-protected map.</p>
@@ -326,17 +326,17 @@
 
         <!-- ── Deep Packet Inspection ── -->
         <div class="feature-section">
-            <h2>🔍 Deep Packet Inspection</h2>
+            <h2>Deep Packet Inspection</h2>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🔐</span> TLS SNI Extraction</h3>
+                <h3>TLS SNI Extraction</h3>
                 <p>Parses TLS ClientHello messages to extract the <strong>Server Name Indication (SNI)</strong> field — the
                     plaintext hostname sent before encryption starts. This is how the engine identifies HTTPS traffic
                     without decryption. Works on port 443.</p>
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🌐</span> QUIC SNI Extraction
+                <h3>QUIC SNI Extraction
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>QUIC (HTTP/3) uses UDP:443 instead of TCP. The engine parses <strong>QUIC Initial packets</strong>
                     which contain the TLS ClientHello inside CRYPTO frames, extracting SNI in the same way.
@@ -344,14 +344,14 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">📄</span> HTTP Host Header Extraction
+                <h3>HTTP Host Header Extraction
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>For unencrypted HTTP (port 80), the engine reads the <code>Host:</code> header from the HTTP request
                     to identify the destination website. Combined with SNI extraction, this covers both HTTP and HTTPS traffic.</p>
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🗃️</span> DNS Query Extraction
+                <h3>DNS Query Extraction
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Extracts queried domain names from DNS request packets (port 53). This provides an additional
                     classification signal — even before the actual connection is established, the engine knows
@@ -361,10 +361,10 @@
 
         <!-- ── Blocking & Filtering ── -->
         <div class="feature-section">
-            <h2>🚫 Blocking & Filtering Rules</h2>
+            <h2>Blocking & Filtering Rules</h2>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🌍</span> IP Blocking</h3>
+                <h3>IP Blocking</h3>
                 <p>Block all traffic from a specific source IP address. The IP is parsed into a <code>uint32_t</code>
                     and checked in an <code>unordered_set</code> for O(1) lookup speed.</p>
                 <div class="terminal-window">
@@ -379,7 +379,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">📱</span> Application Blocking</h3>
+                <h3>Application Blocking</h3>
                 <p>Block entire applications by name. The engine first classifies the traffic using SNI/Host/DNS,
                     then applies the blocking rule. Supported apps include: YouTube, Facebook, Netflix, Google, GitHub,
                     TikTok, Twitter, Instagram, LinkedIn, Spotify, and more.</p>
@@ -395,7 +395,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🔗</span> Domain Blocking with Wildcards
+                <h3>Domain Blocking with Wildcards
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Block domains with <strong>substring matching</strong> and wildcard support.
                     <code>*.facebook.com</code> blocks all Facebook subdomains including
@@ -412,14 +412,14 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🚪</span> Port Blocking
+                <h3>Port Blocking
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Block all traffic to specific destination ports. For example, block port 8080 to prevent proxy access,
                     or block port 22 to prevent SSH tunneling.</p>
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">📋</span> Block Reason Reporting
+                <h3>Block Reason Reporting
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>When a packet is blocked, the engine records exactly <em>why</em> — was it an IP rule, an app rule,
                     a domain rule, or a port rule? The <code>BlockReason</code> struct contains the type and a human-readable
@@ -427,7 +427,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">💾</span> Rule Persistence
+                <h3>Rule Persistence
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Save your blocking rules to a file with <code>saveRules()</code> and reload them later with
                     <code>loadRules()</code>. Deploy the same ruleset across multiple instances or environments.</p>
@@ -436,10 +436,10 @@
 
         <!-- ── Connection Tracking ── -->
         <div class="feature-section">
-            <h2>🔌 Connection Tracking</h2>
+            <h2>Connection Tracking</h2>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🗂️</span> Per-Thread Flow Tables
+                <h3>Per-Thread Flow Tables
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Each Fast Path worker maintains its own <code>unordered_map&lt;FiveTuple, FlowEntry&gt;</code>.
                     Because flow affinity guarantees all packets from the same connection go to the same worker,
@@ -447,7 +447,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">🔄</span> TCP State Machine
+                <h3>TCP State Machine
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>The engine tracks TCP connection state transitions: <strong>NEW → SYN_SENT → ESTABLISHED → FIN_WAIT → CLOSED</strong>.
                     This enables accurate connection counting and detection of incomplete handshakes (potential port scans).</p>
@@ -456,10 +456,10 @@
 
         <!-- ── I/O ── -->
         <div class="feature-section">
-            <h2>📁 File I/O</h2>
+            <h2>File I/O</h2>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">📖</span> Streaming PCAP Reader
+                <h3>Streaming PCAP Reader
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>The <code>PcapReader</code> reads packets one at a time from disk — never loading the entire file
                     into memory. This means you can process <strong>multi-gigabyte capture files</strong> with constant
@@ -467,7 +467,7 @@
             </div>
 
             <div class="feature-card">
-                <h3><span class="feat-icon">✏️</span> Output PCAP Writer
+                <h3>Output PCAP Writer
                     <span class="not-in-web">NOT IN WEB VERSION</span></h3>
                 <p>Forwarded packets are written to a new PCAP file in real time. The output file contains only the
                     "clean" traffic — blocked packets are physically absent. You can then open this file in
@@ -477,7 +477,7 @@
 
         <!-- ── CLI Reference ── -->
         <div class="cli-ref">
-            <h2>📟 CLI Reference</h2>
+            <h2>CLI Reference</h2>
             <table class="cli-table">
                 <thead>
                     <tr>

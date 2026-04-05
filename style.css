@@ -118,6 +118,175 @@ h4 {
     }
 }
 
+/* ─── Sticky Navbar ───────────────────────────────────────────────────────── */
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 58px;
+    background: rgba(7, 13, 26, 0.6);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid transparent;
+    transition: background 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+.navbar.scrolled {
+    background: rgba(7, 13, 26, 0.88);
+    border-bottom-color: var(--surface-border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 28px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+/* Brand */
+.navbar-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-0);
+    text-decoration: none;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.navbar-brand-dot {
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Links */
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-left: auto;
+}
+
+.navbar-links .nav-link {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-2);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s, background 0.2s;
+    white-space: nowrap;
+}
+
+.navbar-links .nav-link:hover {
+    color: var(--text-0);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.navbar-links .nav-link.active {
+    color: var(--accent);
+    background: rgba(0, 229, 255, 0.08);
+}
+
+/* GitHub link accent */
+.navbar-links .nav-github {
+    color: var(--text-1);
+    border: 1px solid var(--surface-border);
+    padding: 5px 14px;
+    margin-left: 8px;
+}
+
+.navbar-links .nav-github:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 229, 255, 0.06);
+}
+
+/* Hamburger toggle */
+.navbar-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    margin-left: auto;
+}
+
+.navbar-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-2);
+    border-radius: 2px;
+    transition: all 0.25s var(--ease);
+    transform-origin: center;
+}
+
+.navbar-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navbar-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.navbar-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Push content below fixed navbar */
+body {
+    padding-top: 58px;
+}
+
+/* Mobile navbar */
+@media (max-width: 768px) {
+    .navbar-toggle {
+        display: flex;
+    }
+
+    .navbar-links {
+        display: none;
+        position: absolute;
+        top: 58px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 8px 16px 16px;
+        background: rgba(7, 13, 26, 0.97);
+        border-bottom: 1px solid var(--surface-border);
+        backdrop-filter: blur(18px);
+    }
+
+    .navbar-links.open {
+        display: flex;
+    }
+
+    .navbar-links .nav-link {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    .navbar-links .nav-github {
+        margin-left: 0;
+        margin-top: 8px;
+        text-align: center;
+    }
+
+    .navbar-inner {
+        padding: 0 16px;
+    }
+}
+
 /* ─── Header ──────────────────────────────────────────────────────────────── */
 
 .header {
@@ -1746,7 +1915,203 @@ h4 {
     gap: 14px;
 }
 
+/* ─── Engineering Challenges Section ─────────────────────────────────────── */
+
+.challenges-section {
+    padding: 56px 0;
+    border-bottom: 1px solid var(--surface-border);
+    margin-bottom: 40px;
+}
+
+.challenges-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-bottom: 48px;
+    border: 1px solid var(--surface-border);
+}
+
+@media (max-width: 900px) {
+    .challenges-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.challenge-card {
+    display: flex;
+    gap: 20px;
+    padding: 28px 26px;
+    border-right: 1px solid var(--surface-border);
+    border-bottom: 1px solid var(--surface-border);
+    background: rgba(15, 23, 42, 0.3);
+    transition: background 0.3s var(--ease);
+    min-width: 0;
+}
+
+.challenge-card:nth-child(even) {
+    border-right: none;
+}
+
+.challenge-card:nth-last-child(-n+2) {
+    border-bottom: none;
+}
+
+@media (max-width: 900px) {
+    .challenge-card {
+        border-right: none;
+    }
+    .challenge-card:nth-last-child(-n+2) {
+        border-bottom: 1px solid var(--surface-border);
+    }
+    .challenge-card:last-child {
+        border-bottom: none;
+    }
+}
+
+.challenge-card:hover {
+    background: rgba(0, 229, 255, 0.04);
+}
+
+.challenge-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0.18;
+    line-height: 1;
+    flex-shrink: 0;
+    padding-top: 4px;
+    user-select: none;
+}
+
+.challenge-body {
+    min-width: 0;
+}
+
+.challenge-body h3 {
+    font-size: 1rem;
+    color: var(--text-0);
+    margin-bottom: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+}
+
+.challenge-body p {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 10px;
+}
+
+.challenge-body p:last-of-type {
+    margin-bottom: 14px;
+}
+
+.challenge-body strong {
+    color: var(--text-1);
+}
+
+.challenge-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.3);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ─── What I Learned ──────────────────────────────────────────────────────── */
+
+.learned-section {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-md);
+    padding: 36px 32px;
+}
+
+.learned-section > h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.15rem;
+    color: var(--text-0);
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.learned-intro {
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--text-3);
+    line-height: 1.65;
+    max-width: 600px;
+    margin: 0 auto 28px;
+}
+
+.learned-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 1100px) {
+    .learned-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .learned-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .learned-section {
+        padding: 24px 18px;
+    }
+}
+
+@media (max-width: 420px) {
+    .learned-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.learned-item {
+    text-align: center;
+    padding: 20px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--surface-border);
+    background: rgba(3, 7, 18, 0.4);
+    transition: all 0.3s var(--ease);
+    min-width: 0;
+}
+
+.learned-item:hover {
+    border-color: rgba(0, 229, 255, 0.2);
+    background: rgba(0, 229, 255, 0.04);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.learned-icon {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+}
+
+.learned-item h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-0);
+    margin-bottom: 8px;
+}
+
+.learned-item p {
+    font-size: 0.76rem;
+    color: var(--text-3);
+    line-height: 1.6;
+}
+
 /* ─── Responsive (Consolidated) ───────────────────────────────────────────── */
+
 
 @media (max-width: 900px) {
     .sni-grid,
@@ -1943,7 +2308,13 @@ h4 {
 
 /* ─── Connection Flow Map ─────────────────────────────────────────────────── */
 
+#connGroupedView {
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
 .flow-group {
+    min-width: 600px;
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-sm);
     margin-bottom: 6px;
