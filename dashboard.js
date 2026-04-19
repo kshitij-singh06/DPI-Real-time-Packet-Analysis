@@ -221,8 +221,8 @@ function updateStats() {
 
 function initCharts() {
     // Global Chart.js defaults for dark theme
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.borderColor = 'rgba(148,163,184,0.1)';
+    Chart.defaults.color = '#4B5563';
+    Chart.defaults.borderColor = 'rgba(31, 111, 95, 0.1)';
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.font.size = 11;
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
@@ -236,8 +236,8 @@ function initCharts() {
             datasets: [{
                 label: 'Packets/sec',
                 data: [],
-                borderColor: '#00e5ff',
-                backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                borderColor: '#1F6F5F',
+                backgroundColor: 'rgba(31, 111, 95, 0.1)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -296,8 +296,8 @@ function initCharts() {
             labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: 'rgba(56,189,248,0.5)',
-                borderColor: 'rgba(56,189,248,0.8)',
+                backgroundColor: 'rgba(84, 152, 57, 0.95)',
+                borderColor: 'rgba(67, 84, 92, 0.8)',
                 borderWidth: 1,
                 borderRadius: 4,
             }]
@@ -837,11 +837,11 @@ function makeAppTag(app) {
 
 function makeStateBadge(state) {
     const map = {
-        NEW: { bg: 'rgba(148,163,184,0.1)', color: '#94a3b8' },
-        ESTABLISHED: { bg: 'rgba(56,189,248,0.1)', color: '#38bdf8' },
-        CLASSIFIED: { bg: 'rgba(34,197,94,0.1)', color: '#22c55e' },
-        BLOCKED: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-        CLOSED: { bg: 'rgba(100,116,139,0.1)', color: '#64748b' },
+        NEW: { bg: 'rgba(100,116,139,0.15)', color: '#475569' },
+        ESTABLISHED: { bg: 'rgba(2,132,199,0.15)', color: '#0284c7' },
+        CLASSIFIED: { bg: 'rgba(22,163,74,0.15)', color: '#16a34a' },
+        BLOCKED: { bg: 'rgba(220,38,38,0.15)', color: '#dc2626' },
+        CLOSED: { bg: 'rgba(71,85,105,0.15)', color: '#334155' },
     };
     const s = map[state] || map.NEW;
     return `<span class="badge" style="background:${s.bg};color:${s.color};">${state}</span>`;
@@ -1024,7 +1024,7 @@ if (geoLookupBtn) {
 
                 const circle = L.circleMarker([lat, lon], {
                     radius,
-                    fillColor:   '#00e5ff',
+                    fillColor:   '#1F6F5F',
                     color:       '#ffffff',
                     weight:      1,
                     opacity:     0.8,
